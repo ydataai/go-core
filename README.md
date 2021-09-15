@@ -1,3 +1,12 @@
-# YData's open-source-template
+# Go Core
 
-New YData Open Source repositories should use this repository as a template.
+Project structure and modules used by our go projects.
+
+## How to install
+
+`go get ydataai/go-core`
+
+
+# About 👯‍♂️
+
+With ❤️ from [YData](https://ydata.ai) [Development team](mailto://developers@ydata.ai)
