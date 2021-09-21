@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 3
     steps:
-      - uses: ydataai/cancel-workflow-action@0.7.0-fix
+      - uses: ydataai/cancel-workflow-action@0.7.0
         with:
           ignore_sha: true
           access_token: ${{ secrets.ACCESS_TOKEN }}
