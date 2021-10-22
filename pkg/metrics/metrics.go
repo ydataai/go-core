@@ -24,6 +24,7 @@ func NewClient(client client.Client, name string) *Metrics {
 	}
 }
 
+// Creation is used when an object is created
 func (m *Metrics) Creation() *prometheus.CounterVec {
 	mc := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -38,6 +39,7 @@ func (m *Metrics) Creation() *prometheus.CounterVec {
 
 }
 
+// Running is used when an object is running
 func (m *Metrics) Running() *prometheus.GaugeVec {
 	mc := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -50,6 +52,7 @@ func (m *Metrics) Running() *prometheus.GaugeVec {
 	return mc
 }
 
+// FailCreation is used when an object is failed
 func (m *Metrics) FailCreation() *prometheus.CounterVec {
 	mc := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -63,6 +66,7 @@ func (m *Metrics) FailCreation() *prometheus.CounterVec {
 	return mc
 }
 
+// CullingCount is used when an object needs to be stopped
 func (m *Metrics) CullingCount() *prometheus.CounterVec {
 	mc := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -75,6 +79,7 @@ func (m *Metrics) CullingCount() *prometheus.CounterVec {
 	return mc
 }
 
+// CullingTimestamp is used to set an annotation when the object is stopped
 func (m *Metrics) CullingTimestamp() *prometheus.GaugeVec {
 	mc := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
