@@ -27,3 +27,6 @@ fmt:	### Run go fmt against code
 
 vet:	### Run go vet against code
 	go vet ./...
+
+build: ### Run go test to build and test the code
+	go test ./...
