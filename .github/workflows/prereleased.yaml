@@ -29,4 +29,4 @@ jobs:
     steps:
     - name: Version
       id: version
-      run: echo ::set-output name=value::`echo ${{ github.ref }} | sed -n -E 's/refs\/tags\/build\/([0-9]+.[0-9]+.[0-9]+)\/([[:alnum:]])/\1.\2/p'`
+      run: echo ::set-output name=value::${GITHUB_REF#refs/*/}
