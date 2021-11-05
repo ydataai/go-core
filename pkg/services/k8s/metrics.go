@@ -1,4 +1,4 @@
-package metrics
+package k8s
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
+// Metrics is a simple struct with some metric templates
 type Metrics struct {
 	client             client.Client
 	Create             *prometheus.CounterVec
@@ -18,7 +19,7 @@ type Metrics struct {
 	CullingTimestamp   *prometheus.GaugeVec
 }
 
-// NewClient register new service metrics
+// NewMetrics register new metrics service
 // WARNING: you cannot call this method twice passing the same name
 // otherwise, it can cause panic
 func NewMetrics(client client.Client, name string) *Metrics {

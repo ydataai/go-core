@@ -1,4 +1,4 @@
-package metrics
+package k8s
 
 import (
 	"regexp"
