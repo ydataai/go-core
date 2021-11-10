@@ -10,3 +10,8 @@ type RESTRequest struct {
 	QueryParams map[string]string
 	Timeout     time.Duration
 }
+
+// LinkResponse is the struct which the Tool Lib request response will be unmarshalled into
+type LinkResponse struct {
+	Link string `json:"link"`
+}
