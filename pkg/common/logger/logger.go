@@ -7,41 +7,54 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Logger defines a struct with required environment variables for logger
-type Logger struct {
+// Configuration defines a struct with required environment variables for logger
+type Configuration struct {
 	Level        string `envconfig:"LOG_LEVEL" default:"DEBUG"`
-	Type         string `envconfig:"LOG_TYPE" default:""`
+	Output       string `envconfig:"LOG_OUTPUT" default:""`
 	CallerFirst  bool   `envconfig:"LOG_CALLER_FIRST" default:"false"`
 	TrimMessages bool   `envconfig:"LOG_TRIM_MESSAGES" default:"true"`
 	HideKeys     bool   `envconfig:"LOG_HIDE_KEYS" default:"false"`
 }
 
-// NewLogger initializes the logger
-func NewLogger() *logrus.Logger {
-	config := Logger{}
-	if err := envconfig.Process("", &config); err != nil {
-		panic(err.Error())
-	}
+// LoadFromEnvVars from the Logger
+func (c *Configuration) LoadFromEnvVars() error {
+	return envconfig.Process("", c)
+}
 
-	loglevel, err := logrus.ParseLevel(config.Level)
-	if err != nil {
-		logrus.Errorf("Error: %v", err)
-		panic(err.Error())
+// NewConfiguration for logger
+func NewConfiguration(level, output string, cf, trim, hk bool) *Configuration {
+	return &Configuration{
+		Level:        level,
+		Output:       output,
+		CallerFirst:  cf,
+		TrimMessages: trim,
+		HideKeys:     hk,
 	}
+}
 
+// InitLogger initializes the logger
+func (c *Configuration) InitLogger() *logrus.Logger {
 	log := logrus.StandardLogger()
 
-	if strings.ToUpper(config.Type) == "JSON" {
+	if strings.ToUpper(c.Output) == "JSON" {
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
-		log.SetLevel(loglevel)
 		log.SetReportCaller(true)
 		log.SetFormatter(&Formatter{
 			TimestampFormat: "[2006-01-02 15:04:05]",
-			CallerFirst:     config.CallerFirst,
-			TrimMessages:    config.TrimMessages,
-			HideKeys:        config.HideKeys,
+			CallerFirst:     c.CallerFirst,
+			TrimMessages:    c.TrimMessages,
+			HideKeys:        c.HideKeys,
 		})
+	}
+
+	loglevel, err := logrus.ParseLevel(c.Level)
+	if err != nil {
+		log.Errorf("An error occurred while parsing LogLevel: %v", err)
+		log.Infof("The debug level will be set.")
+		log.SetLevel(logrus.DebugLevel)
+	} else {
+		log.SetLevel(loglevel)
 	}
 
 	return log
