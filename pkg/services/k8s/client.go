@@ -15,11 +15,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// KubeClient implements structure for Kubernetes Client
 type KubeClient struct {
 	client client.Client
 	logger *logrus.Logger
 }
 
+// NewKubeClient initializes a new client for Kubernetes
+func NewKubeClient(logger *logrus.Logger, client client.Client) KubeClient {
+	return KubeClient{
+		client: client,
+		logger: logger,
+	}
+}
+
+// KubeClientInterface defines the interface for Kubernetes Client
 type KubeClientInterface interface {
 	GetPod(ctx context.Context, namespacedName types.NamespacedName) (coreV1.Pod, error)
 	DeletePod(ctx context.Context, pod *coreV1.Pod) error

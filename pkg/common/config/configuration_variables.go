@@ -19,6 +19,7 @@ type ConfigurationVariables interface {
 	LoadFromEnvVars() error
 }
 
+// InitConfigurationVariables according to environment
 func InitConfigurationVariables(configs []ConfigurationVariables) error {
 	for _, configuration := range configs {
 		if err := configuration.LoadFromEnvVars(); err != nil {

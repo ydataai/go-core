@@ -16,11 +16,7 @@ type HTTPServerConfiguration struct {
 	CertificateKeyFile string        `envconfig:"CERTIFICATE_KEY_FILE" default:"/etc/tls/tls.key"`
 }
 
-// LoadEnvVars reads all env vars required for the server package
+// LoadFromEnvVars reads all env vars required for the server package
 func (h *HTTPServerConfiguration) LoadFromEnvVars() error {
-	if err := envconfig.Process("", h); err != nil {
-		return err
-	}
-
-	return nil
+	return envconfig.Process("", h)
 }

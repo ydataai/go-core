@@ -13,11 +13,7 @@ type RESTControllerConfiguration struct {
 	HTTPRequestTimeout time.Duration `envconfig:"HTTP_REQUEST_TIMEOUT" default:"30s"`
 }
 
-// LoadEnvVars reads all env vars required for the server package
+// LoadFromEnvVars reads all env vars required
 func (c *RESTControllerConfiguration) LoadFromEnvVars() error {
-	if err := envconfig.Process("", c); err != nil {
-		return err
-	}
-
-	return nil
+	return envconfig.Process("", c)
 }

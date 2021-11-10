@@ -7,7 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type LoggerConfig struct {
+// Logger defines a struct with required environment variables for logger
+type Logger struct {
 	Level        string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	Type         string `envconfig:"LOG_TYPE" default:""`
 	CallerFirst  bool   `envconfig:"LOG_CALLER_FIRST" default:"false"`
@@ -15,8 +16,9 @@ type LoggerConfig struct {
 	HideKeys     bool   `envconfig:"LOG_HIDE_KEYS" default:"false"`
 }
 
+// NewLogger initializes the logger
 func NewLogger() *logrus.Logger {
-	config := LoggerConfig{}
+	config := Logger{}
 	if err := envconfig.Process("", &config); err != nil {
 		panic(err.Error())
 	}

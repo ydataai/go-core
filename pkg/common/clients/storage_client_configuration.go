@@ -9,11 +9,7 @@ type StorageClientConfiguration struct {
 	BasePath string `envconfig:"STORAGE_PATH" required:"true"`
 }
 
-// LoadEnvVars parses the required configuration variables. Throws an error if the validations aren't met
+// LoadFromEnvVars parses the required configuration variables. Throws an error if the validations aren't met
 func (c *StorageClientConfiguration) LoadFromEnvVars() error {
-	if err := envconfig.Process("", c); err != nil {
-		return err
-	}
-
-	return nil
+	return envconfig.Process("", c)
 }

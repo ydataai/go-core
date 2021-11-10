@@ -4,7 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// applicationConfiguration defines required variables to configure the environment
+// ManagerConfiguration defines required variables to configure the environment
 type ManagerConfiguration struct {
 	EnableLeaderElection bool   `envconfig:"ENABLE_LEADER_ELECTION" required:"true"`
 	LeaderElectionID     string `envconfig:"LEADER_ELECTION_ID" required:"true"`
@@ -13,10 +13,7 @@ type ManagerConfiguration struct {
 	HealthProbeAddress   string `envconfig:"HEALTH_PROBE_ADDRESS" default:":8081"`
 }
 
+// LoadFromEnvVars from the Manager
 func (c *ManagerConfiguration) LoadFromEnvVars() error {
-	if err := envconfig.Process("", c); err != nil {
-		return err
-	}
-
-	return nil
+	return envconfig.Process("", c)
 }
