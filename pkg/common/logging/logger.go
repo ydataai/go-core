@@ -1,4 +1,4 @@
-package logger
+package logging
 
 import (
 	"strings"
@@ -7,8 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Configuration defines a struct with required environment variables for logger
-type Configuration struct {
+// LoggerConfiguration defines a struct with required environment variables for logger
+type LoggerConfiguration struct {
 	Level        string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 	Output       string `envconfig:"LOG_OUTPUT" default:""`
 	CallerFirst  bool   `envconfig:"LOG_CALLER_FIRST" default:"false"`
@@ -17,38 +17,27 @@ type Configuration struct {
 }
 
 // LoadFromEnvVars from the Logger
-func (c *Configuration) LoadFromEnvVars() error {
-	return envconfig.Process("", c)
-}
-
-// NewConfiguration for logger
-func NewConfiguration(level, output string, cf, trim, hk bool) *Configuration {
-	return &Configuration{
-		Level:        level,
-		Output:       output,
-		CallerFirst:  cf,
-		TrimMessages: trim,
-		HideKeys:     hk,
-	}
+func (lc *LoggerConfiguration) LoadFromEnvVars() error {
+	return envconfig.Process("", lc)
 }
 
 // InitLogger initializes the logger
-func (c *Configuration) InitLogger() *logrus.Logger {
+func (lc *LoggerConfiguration) InitLogger() *logrus.Logger {
 	log := logrus.StandardLogger()
 
-	if strings.ToUpper(c.Output) == "JSON" {
+	if strings.ToUpper(lc.Output) == "JSON" {
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		log.SetReportCaller(true)
 		log.SetFormatter(&Formatter{
 			TimestampFormat: "[2006-01-02 15:04:05]",
-			CallerFirst:     c.CallerFirst,
-			TrimMessages:    c.TrimMessages,
-			HideKeys:        c.HideKeys,
+			CallerFirst:     lc.CallerFirst,
+			TrimMessages:    lc.TrimMessages,
+			HideKeys:        lc.HideKeys,
 		})
 	}
 
-	loglevel, err := logrus.ParseLevel(c.Level)
+	loglevel, err := logrus.ParseLevel(lc.Level)
 	if err != nil {
 		log.Errorf("An error occurred while parsing LogLevel: %v", err)
 		log.Infof("The debug level will be set.")
