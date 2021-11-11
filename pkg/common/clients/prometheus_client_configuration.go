@@ -7,9 +7,7 @@ type PrometheusConfiguration struct {
 	Address string `envconfig:"PROMETHEUS_ADDRESS" required:"true"`
 }
 
+// LoadFromEnvVars for PrometheusConfiguration.
 func (c *PrometheusConfiguration) LoadFromEnvVars() error {
-	if err := envconfig.Process("", c); err != nil {
-		return err
-	}
-	return nil
+	return envconfig.Process("", c)
 }
