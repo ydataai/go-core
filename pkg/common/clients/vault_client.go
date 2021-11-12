@@ -51,7 +51,7 @@ func login(client *api.Client, logger *logrus.Logger) (*api.Secret, error) {
 	// reads jwt from service account
 	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		return nil, fmt.Errorf("unable to read file containing service account token: %w 😱", err)
+		return nil, fmt.Errorf("unable to read file containing service account token: %v 😱", err)
 	}
 	params := map[string]interface{}{
 		"jwt":  string(jwt),
@@ -60,7 +60,7 @@ func login(client *api.Client, logger *logrus.Logger) (*api.Secret, error) {
 	// perform login
 	resp, err := client.Logical().Write("auth/kubernetes/login", params)
 	if err != nil {
-		return nil, fmt.Errorf("unable to log in with Kubernetes auth: %w 😱", err)
+		return nil, fmt.Errorf("unable to log in with Kubernetes auth: %v 😱", err)
 	}
 	if resp == nil || resp.Auth == nil || resp.Auth.ClientToken == "" {
 		return nil, errors.New("login response did not return client token 😱")
@@ -81,7 +81,7 @@ func (vc *VaultClient) renew(secret *api.Secret) {
 		// perform renew
 		resp, err := vc.client.Auth().Token().Renew(secret.Auth.ClientToken, secret.Auth.LeaseDuration)
 		if err != nil {
-			vc.logger.Errorf("unable to renew the access token %w 😱", err)
+			vc.logger.Errorf("unable to renew the access token %v 😱", err)
 		}
 		// client update with the renewed token
 		if resp != nil && resp.Auth != nil && resp.Auth.ClientToken != "" {
@@ -101,7 +101,7 @@ func (vc *VaultClient) StoreCredentials(datasourceName string, credentials map[s
 		"data": credentials,
 	})
 	if err != nil {
-		vc.logger.Errorf("Unable to store credentials in Vault 😱. Err: %w ", err)
+		vc.logger.Errorf("Unable to store credentials in Vault 😱. Err: %v ", err)
 		return err
 	}
 
@@ -116,7 +116,7 @@ func (vc *VaultClient) GetCredentials(datasourceName string) (*Credentials, erro
 
 	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", path, datasourceName))
 	if err != nil {
-		vc.logger.Errorf("Unable to fetch credentials from Vault 😱. Err: %w", err)
+		vc.logger.Errorf("Unable to fetch credentials from Vault 😱. Err: %v", err)
 		return nil, err
 	}
 	if secret == nil {
@@ -127,7 +127,7 @@ func (vc *VaultClient) GetCredentials(datasourceName string) (*Credentials, erro
 
 	secretsMap, ok := secret.Data["data"].(map[string]interface{})
 	if !ok {
-		vc.logger.Errorf("Unable to decipher received credentials from Vault 😱. Err: %w", err)
+		vc.logger.Errorf("Unable to decipher received credentials from Vault 😱. Err: %v", err)
 		return nil, err
 	}
 
@@ -148,7 +148,7 @@ func (vc *VaultClient) DeleteCredentials(datasourceName string) error {
 
 	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", path, datasourceName))
 	if err != nil {
-		vc.logger.Errorf("Unable to delete credentials from Vault 😱. Err: %w", err)
+		vc.logger.Errorf("Unable to delete credentials from Vault 😱. Err: %v", err)
 		return err
 	}
 
@@ -166,10 +166,10 @@ func (vc *VaultClient) CheckIfEngineExists() bool {
 	if _, err := vc.client.Logical().Read(epath); err != nil {
 		switch err.(type) {
 		case *api.ResponseError:
-			vc.logger.Infof("%v Secrets engine seems to be non existing 🤔. Err: %w", epath, err)
+			vc.logger.Infof("%v Secrets engine seems to be non existing 🤔. Err: %v", epath, err)
 			return false
 		default:
-			vc.logger.Errorf("An error occurred fetching %v Secrets Engine 😵. Err: %w", epath, err)
+			vc.logger.Errorf("An error occurred fetching %v Secrets Engine 😵. Err: %v", epath, err)
 			return false
 		}
 	}
