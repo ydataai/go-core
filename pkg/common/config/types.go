@@ -14,3 +14,7 @@ type Credentials map[string]string
 
 // ResourceKind defines a resource kind type
 type ResourceKind string
+
+func (n Namespace) String() string {
+	return string(n)
+}
