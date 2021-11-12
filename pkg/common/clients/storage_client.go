@@ -15,7 +15,7 @@ type StorageClient struct {
 
 // StorageClientInterface defines storage client interface
 type StorageClientInterface interface {
-	CreateWorkspace(obj, relativePath string) error
+	CreateDirectory(obj, relativePath string) error
 	RemoveDirectory(obj, relativePath string) error
 	CheckIfExists(obj, relativePath string) bool
 }
@@ -28,8 +28,8 @@ func NewStorageClient(logger *logrus.Logger, configuration StorageClientConfigur
 	}
 }
 
-// CreateWorkspace attempts to create a directory to hold requirements.txt
-func (sc StorageClient) CreateWorkspace(obj, relativePath string) error {
+// CreateDirectory attempts to create a directory to hold requirements.txt
+func (sc *StorageClient) CreateDirectory(obj, relativePath string) error {
 	fullPath := fmt.Sprintf("%s/%s/%s", sc.configuration.BasePath, obj, relativePath)
 
 	sc.logger.Info("Attempting to create directory ", fullPath)
@@ -39,6 +39,13 @@ func (sc StorageClient) CreateWorkspace(obj, relativePath string) error {
 	}
 
 	return nil
+}
+
+// RemoveDirectory attempts to remove the directory that holds requirements.txt
+func (sc *StorageClient) RemoveDirectory(obj, relativePath string) error {
+	fullPath := fmt.Sprintf("%s/%s/%s", sc.configuration.BasePath, obj, relativePath)
+	sc.logger.Info("Attempting to remove ", fullPath)
+	return os.RemoveAll(fullPath)
 }
 
 // CheckIfExists attempts to check if the directory exists
@@ -51,11 +58,4 @@ func (sc *StorageClient) CheckIfExists(obj, relativePath string) bool {
 	}
 
 	return true
-}
-
-// RemoveDirectory attempts to remove the directory that holds requirements.txt
-func (sc StorageClient) RemoveDirectory(obj, relativePath string) error {
-	fullPath := fmt.Sprintf("%s/%s/%s", sc.configuration.BasePath, obj, relativePath)
-	sc.logger.Info("Attempting to remove ", fullPath)
-	return os.RemoveAll(fullPath)
 }
