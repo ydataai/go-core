@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
+	"github.com/ydataai/go-core/pkg/common/config"
 )
 
 const path = "datasources"
@@ -111,7 +112,7 @@ func (vc *VaultClient) StoreCredentials(datasourceName string, credentials map[s
 
 // GetCredentials receives the name of the DataSource and attemps to retrieve the map of credentials present
 // on the Vault server.
-func (vc *VaultClient) GetCredentials(datasourceName string) (*Credentials, error) {
+func (vc *VaultClient) GetCredentials(datasourceName string) (*config.Credentials, error) {
 	vc.logger.Info("Fetching credentials from Vault ☄️")
 
 	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", path, datasourceName))
@@ -132,7 +133,7 @@ func (vc *VaultClient) GetCredentials(datasourceName string) (*Credentials, erro
 	}
 
 	vc.logger.Info("Processing credentials map 🔎")
-	credentials := Credentials{}
+	credentials := config.Credentials{}
 
 	for key, value := range secretsMap {
 		credentials[fmt.Sprintf("%v", key)] = fmt.Sprintf("%v", value)
