@@ -13,6 +13,13 @@ type StorageClient struct {
 	configuration StorageClientConfiguration
 }
 
+// StorageClientInterface defines storage client interface
+type StorageClientInterface interface {
+	CreateWorkspace(obj, relativePath string) error
+	RemoveDirectory(obj, relativePath string) error
+	CheckIfExists(obj, relativePath string) bool
+}
+
 // NewStorageClient returns an initialized struct with the required dependencies injected
 func NewStorageClient(logger *logrus.Logger, configuration StorageClientConfiguration) StorageClient {
 	return StorageClient{
