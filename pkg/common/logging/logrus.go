@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +19,34 @@ func NewLogger() Logger {
 		fmt.Printf("Initializing standard logger.")
 		return &logrusProxy{logger: logrus.StandardLogger()}
 	}
-	return &logrusProxy{logger: config.InitLogger()}
+	return initLogger(config)
+}
+
+// initLogger initializes the logger
+func initLogger(config LoggerConfiguration) logrusProxy {
+	log := logrus.StandardLogger()
+	// formatter
+	if strings.ToUpper(config.Output) == "JSON" {
+		log.SetFormatter(&logrus.JSONFormatter{})
+	} else {
+		log.SetReportCaller(true)
+		log.SetFormatter(&Formatter{
+			TimestampFormat: "[2006-01-02 15:04:05]",
+			CallerFirst:     config.CallerFirst,
+			TrimMessages:    config.TrimMessages,
+			HideKeys:        config.HideKeys,
+		})
+	}
+	// level
+	loglevel, err := logrus.ParseLevel(config.Level)
+	if err != nil {
+		log.Errorf("An error occurred while parsing LogLevel: %v", err)
+		log.Infof("The debug level will be set.")
+		log.SetLevel(logrus.DebugLevel)
+	} else {
+		log.SetLevel(loglevel)
+	}
+	return logrusProxy{logger: log}
 }
 
 func (l logrusProxy) Trace(args ...interface{}) {
