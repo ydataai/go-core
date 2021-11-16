@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -12,13 +11,7 @@ type logrusProxy struct {
 }
 
 // NewLogger creates a Logger proxy instance.
-func NewLogger() Logger {
-	config := LoggerConfiguration{}
-	if err := config.LoadFromEnvVars(); err != nil {
-		fmt.Printf("An error occurred while logger initialization. Err: %v", err)
-		fmt.Printf("Initializing standard logger.")
-		return &logrusProxy{logger: logrus.StandardLogger()}
-	}
+func NewLogger(config LoggerConfiguration) Logger {
 	return initLogger(config)
 }
 
