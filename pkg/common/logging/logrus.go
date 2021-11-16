@@ -10,13 +10,8 @@ type logrusProxy struct {
 	logger *logrus.Logger
 }
 
-// NewLogger creates a Logger proxy instance.
-func NewLogger(config LoggerConfiguration) Logger {
-	return initLogrusLogger(config)
-}
-
-// initLogger initializes the logger
-func initLogrusLogger(config LoggerConfiguration) logrusProxy {
+// newLogrusLogger construct and initializes the logrus logger.
+func newLogrusLogger(config LoggerConfiguration) logrusProxy {
 	log := logrus.StandardLogger()
 	// formatter
 	if strings.ToUpper(config.Output) == "JSON" {

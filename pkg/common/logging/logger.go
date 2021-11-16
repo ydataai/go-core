@@ -57,3 +57,8 @@ type Logger interface {
 	// Fatalln logs a message at level Fatal on the standard logger then the process will exit with status set to 1.
 	Fatalln(args ...interface{})
 }
+
+// NewLogger creates a Logger proxy instance.
+func NewLogger(config LoggerConfiguration) Logger {
+	return newLogrusLogger(config)
+}
