@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sirupsen/logrus"
+	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
 // StorageClient is a structure that holds all the dependencies for the following client
 type StorageClient struct {
-	logger        *logrus.Logger
+	logger        logging.Logger
 	pathSufix     string
 	configuration StorageClientConfiguration
 }
@@ -22,7 +22,7 @@ type StorageClientInterface interface {
 }
 
 // NewStorageClient returns an initialized struct with the required dependencies injected
-func NewStorageClient(logger *logrus.Logger, pathSufix string, configuration StorageClientConfiguration) StorageClient {
+func NewStorageClient(logger logging.Logger, pathSufix string, configuration StorageClientConfiguration) StorageClient {
 	return StorageClient{
 		logger:        logger,
 		pathSufix:     pathSufix,

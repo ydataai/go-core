@@ -3,7 +3,7 @@ package grpc
 import (
 	context "context"
 
-	"github.com/sirupsen/logrus"
+	"github.com/ydataai/go-core/pkg/common/logging"
 	"github.com/ydataai/go-core/pkg/services/cloud"
 )
 
@@ -11,11 +11,11 @@ import (
 type CloudAdaptergRPCController struct {
 	UnimplementedMeteringServiceServer
 	service cloud.MeteringService
-	logger  *logrus.Logger
+	logger  logging.Logger
 }
 
 // NewCloudAdaptergRPCController creates a new CloudAdaptergRPCController instance
-func NewCloudAdaptergRPCController(service cloud.MeteringService, logger *logrus.Logger) CloudAdaptergRPCController {
+func NewCloudAdaptergRPCController(service cloud.MeteringService, logger logging.Logger) CloudAdaptergRPCController {
 	return CloudAdaptergRPCController{
 		service: service,
 		logger:  logger,

@@ -5,21 +5,21 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ydataai/go-core/pkg/common/logging"
 	"github.com/ydataai/go-core/pkg/services/cloud"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 // CloudAdapterRESTController defines rest controller
 type CloudAdapterRESTController struct {
-	logger  *logrus.Logger
+	logger  logging.Logger
 	service cloud.MeteringService
 }
 
 // NewCloudAdapterRESTController initializes rest controller
 func NewCloudAdapterRESTController(
-	logger *logrus.Logger,
+	logger logging.Logger,
 	service cloud.MeteringService,
 ) CloudAdapterRESTController {
 	return CloudAdapterRESTController{
