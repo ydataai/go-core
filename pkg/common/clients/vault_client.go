@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
 	"github.com/ydataai/go-core/pkg/common/config"
+	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
 const path = "datasources"
@@ -17,12 +17,12 @@ const path = "datasources"
 // VaultClient defines the Vault client struct, holding all the required dependencies
 type VaultClient struct {
 	configuration VaultClientConfiguration
-	logger        *logrus.Logger
+	logger        logging.Logger
 	client        *api.Client
 }
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
-func NewVaultClient(configuration VaultClientConfiguration, logger *logrus.Logger) (*VaultClient, error) {
+func NewVaultClient(configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
 	config := &api.Config{Address: configuration.vaultURL}
 
 	client, err := api.NewClient(config)
@@ -47,7 +47,7 @@ func NewVaultClient(configuration VaultClientConfiguration, logger *logrus.Logge
 }
 
 // login the k8s service account
-func login(client *api.Client, logger *logrus.Logger) (*api.Secret, error) {
+func login(client *api.Client, logger logging.Logger) (*api.Secret, error) {
 	logger.Info("performing vault k8s login.")
 	// reads jwt from service account
 	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")

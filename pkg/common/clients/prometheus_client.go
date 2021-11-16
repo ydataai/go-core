@@ -7,12 +7,12 @@ import (
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/sirupsen/logrus"
+	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
 // PrometheusClient represents the Prometheus client.
 type PrometheusClient struct {
-	logger *logrus.Logger
+	logger logging.Logger
 	config PrometheusConfiguration
 	api    v1.API
 }
@@ -20,7 +20,7 @@ type PrometheusClient struct {
 // NewPrometheusClient creates a PrometheusClient instance.
 func NewPrometheusClient(
 	config PrometheusConfiguration,
-	logger *logrus.Logger) PrometheusClient {
+	logger logging.Logger) PrometheusClient {
 	api := createClientAPI(config, logger)
 	return PrometheusClient{
 		config: config,
@@ -29,7 +29,7 @@ func NewPrometheusClient(
 	}
 }
 
-func createClientAPI(config PrometheusConfiguration, logger *logrus.Logger) v1.API {
+func createClientAPI(config PrometheusConfiguration, logger logging.Logger) v1.API {
 	client, err := api.NewClient(api.Config{
 		Address: config.Address,
 	})

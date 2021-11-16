@@ -3,8 +3,7 @@ package k8s
 import (
 	"context"
 
-	"github.com/sirupsen/logrus"
-
+	"github.com/ydataai/go-core/pkg/common/logging"
 	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	coreV1 "k8s.io/api/core/v1"
@@ -18,11 +17,11 @@ import (
 // KubeClient implements structure for Kubernetes Client
 type KubeClient struct {
 	client client.Client
-	logger *logrus.Logger
+	logger logging.Logger
 }
 
 // NewKubeClient initializes a new client for Kubernetes
-func NewKubeClient(logger *logrus.Logger, client client.Client) KubeClient {
+func NewKubeClient(logger logging.Logger, client client.Client) KubeClient {
 	return KubeClient{
 		client: client,
 		logger: logger,

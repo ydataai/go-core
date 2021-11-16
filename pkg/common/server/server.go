@@ -9,19 +9,19 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
 // Server defines a struct for server
 type Server struct {
-	log           *logrus.Logger
+	log           logging.Logger
 	Router        *gin.Engine
 	httpServer    *http.Server
 	configuration HTTPServerConfiguration
 }
 
 // NewServer initializes a server
-func NewServer(log *logrus.Logger, configuration HTTPServerConfiguration) *Server {
+func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Server {
 	router := gin.Default()
 
 	s := &Server{
