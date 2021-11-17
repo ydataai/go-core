@@ -6,7 +6,7 @@ import (
 
 // LoggerConfiguration defines a struct with required environment variables for logger
 type LoggerConfiguration struct {
-	Level        string `envconfig:"LOG_LEVEL" default:"DEBUG"`
+	Level        string `envconfig:"LOG_LEVEL" default:"debug"`
 	Output       string `envconfig:"LOG_OUTPUT" default:""`
 	CallerFirst  bool   `envconfig:"LOG_CALLER_FIRST" default:"false"`
 	TrimMessages bool   `envconfig:"LOG_TRIM_MESSAGES" default:"true"`
