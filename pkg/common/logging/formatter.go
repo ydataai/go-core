@@ -3,7 +3,6 @@ package logging
 import (
 	"bytes"
 	"fmt"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -37,6 +36,9 @@ type Formatter struct {
 	// NoUppercaseLevel - no upper case for level value
 	NoUppercaseLevel bool
 
+	// WithFields bool - show fields
+	WithFields bool
+
 	// TrimMessages - trim whitespaces on messages
 	TrimMessages bool
 
@@ -44,7 +46,7 @@ type Formatter struct {
 	CallerFirst bool
 
 	// CustomCallerFormatter - set custom formatter for caller info
-	CustomCallerFormatter func(*runtime.Frame) string
+	CustomCallerFormatter func(*logrus.Entry) string
 }
 
 // Format an log entry
@@ -95,10 +97,12 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	// write fields
-	if f.FieldsOrder == nil {
-		f.writeFields(b, entry)
-	} else {
-		f.writeOrderedFields(b, entry)
+	if f.WithFields {
+		if f.FieldsOrder == nil {
+			f.writeFields(b, entry)
+		} else {
+			f.writeOrderedFields(b, entry)
+		}
 	}
 
 	if f.NoFieldsSpace {
@@ -128,7 +132,7 @@ func (f *Formatter) Format(entry *logrus.Entry) ([]byte, error) {
 func (f *Formatter) writeCaller(b *bytes.Buffer, entry *logrus.Entry) {
 	if entry.HasCaller() {
 		if f.CustomCallerFormatter != nil {
-			fmt.Fprint(b, f.CustomCallerFormatter(entry.Caller))
+			fmt.Fprint(b, f.CustomCallerFormatter(entry))
 		} else {
 			fmt.Fprintf(
 				b,
