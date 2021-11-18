@@ -78,7 +78,7 @@ jobs:
         VERSION: ${{ needs.prepare.outputs.release }}
       with:
         tag_name: v${{ env.VERSION }}.${{ env.BUILD }}
-        release_name: v${{ env.VERSION }}.${{ env.BUILD }}
+        release_name: ${{ env.VERSION }}.${{ env.BUILD }}
         body: ${{ github.event.head_commit.message }}
         prerelease: true
 
