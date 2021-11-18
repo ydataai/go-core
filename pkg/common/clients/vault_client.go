@@ -23,7 +23,7 @@ type VaultClient struct {
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
 func NewVaultClient(configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
-	config := &api.Config{Address: configuration.vaultURL}
+	config := &api.Config{Address: configuration.VaultURL}
 
 	client, err := api.NewClient(config)
 	if err != nil {
