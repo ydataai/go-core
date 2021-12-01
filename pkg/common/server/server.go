@@ -85,3 +85,8 @@ func (s *Server) RunSecurely(ctx context.Context) {
 		s.log.Infof("Server exiting")
 	}()
 }
+
+// UseHealthCheck creates a new HealthCheck route
+func (s *Server) UseHealthCheck() {
+	s.Router.GET(s.configuration.HealthCheckEndpoint, s.healthz())
+}

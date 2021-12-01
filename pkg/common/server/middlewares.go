@@ -44,3 +44,9 @@ func (s Server) setUserID() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func (s Server) healthz() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Status(http.StatusNoContent)
+	}
+}
