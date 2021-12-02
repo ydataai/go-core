@@ -10,18 +10,22 @@ func ArrayContainsString(list []string, key string) bool {
 	return false
 }
 
-// FirstStringOfArray is a handle to get the first position of the array
-func FirstStringOfArray(list []string) string {
+// FirstStringOfArrayWithFallback is a handle to get the first position of the array with fallback
+func FirstStringOfArrayWithFallback(list []string, fallback ...string) string {
 	if len(list) > 0 {
 		return list[0]
+	} else if len(fallback) > 0 {
+		return fallback[0]
 	}
 	return ""
 }
 
-// LastStringOfArray is a handle to get the last position of the array
-func LastStringOfArray(list []string) string {
+// LastStringOfArrayWithFallback is a handle to get the last position of the array with fallback
+func LastStringOfArrayWithFallback(list []string, fallback ...string) string {
 	if len(list) > 0 {
 		return list[len(list)-1]
+	} else if len(fallback) > 0 {
+		return fallback[0]
 	}
 	return ""
 }

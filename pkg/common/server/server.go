@@ -6,20 +6,20 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ydataai/go-core/pkg/common/helpers"
 	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
 // Server defines a struct for server
 type Server struct {
-	logger          logging.Logger
-	Router          *gin.Engine
-	httpServer      *http.Server
-	configuration   HTTPServerConfiguration
-	readyzAvailable atomic.Value
+	logger        logging.Logger
+	Router        *gin.Engine
+	httpServer    *http.Server
+	configuration HTTPServerConfiguration
+	readyzFunc    func() bool
 }
 
 // NewServer initializes a server
@@ -89,19 +89,18 @@ func (s *Server) RunSecurely(ctx context.Context) {
 }
 
 // AddHealthz creates a route to LivenessProbe
-func (s *Server) AddHealthz() {
-	s.Router.GET(s.configuration.HealthzEndpoint, s.healthz())
+func (s *Server) AddHealthz(urls ...string) {
+	url := helpers.FirstStringOfArrayWithFallback(urls, s.configuration.HealthzEndpoint)
+
+	s.Router.GET(url, s.healthz())
 }
 
 // AddReadyz creates a route to ReadinessProbe
-func (s *Server) AddReadyz() {
+func (s *Server) AddReadyz(status func() bool, urls ...string) {
 	// Readyz probe is negative by default
-	s.readyzAvailable.Store(false)
+	s.readyzFunc = status
 
-	s.Router.GET(s.configuration.ReadyzEndpoint, s.readyz())
-}
+	url := helpers.FirstStringOfArrayWithFallback(urls, s.configuration.ReadyzEndpoint)
 
-// SetReadyzState enables/disables readyz
-func (s *Server) SetReadyzState(state bool) {
-	s.readyzAvailable.Store(state)
+	s.Router.GET(url, s.readyz())
 }
