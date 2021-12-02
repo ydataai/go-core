@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
@@ -14,18 +15,19 @@ import (
 
 // Server defines a struct for server
 type Server struct {
-	log           logging.Logger
-	Router        *gin.Engine
-	httpServer    *http.Server
-	configuration HTTPServerConfiguration
+	logger          logging.Logger
+	Router          *gin.Engine
+	httpServer      *http.Server
+	configuration   HTTPServerConfiguration
+	readyzAvailable atomic.Value
 }
 
 // NewServer initializes a server
-func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Server {
+func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Server {
 	router := gin.Default()
 
 	s := &Server{
-		log:           log,
+		logger:        logger,
 		configuration: configuration,
 	}
 
@@ -40,6 +42,7 @@ func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Serve
 	}
 
 	s.Router = router
+	s.UseHealthCheck()
 
 	return s
 }
@@ -48,20 +51,20 @@ func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Serve
 func (s *Server) Run(ctx context.Context) {
 	go func() {
 		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			s.log.Errorf("unexpected error while running server %v", err)
+			s.logger.Errorf("unexpected error while running server %v", err)
 		}
 
 		c := make(chan os.Signal, 3)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 
-		s.log.Infof("Shutdown Server ...")
+		s.logger.Infof("Shutdown Server ...")
 
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.log.Fatal("Server forced to shutdown: ", err)
+			s.logger.Fatal("Server forced to shutdown: ", err)
 		}
 
-		s.log.Infof("Server exiting")
+		s.logger.Infof("Server exiting")
 	}()
 }
 
@@ -69,24 +72,28 @@ func (s *Server) Run(ctx context.Context) {
 func (s *Server) RunSecurely(ctx context.Context) {
 	go func() {
 		if err := s.httpServer.ListenAndServeTLS(s.configuration.CertificateFile, s.configuration.CertificateKeyFile); err != http.ErrServerClosed {
-			s.log.Errorf("unexpected error while running server %v", err.Error())
+			s.logger.Errorf("unexpected error while running server %v", err.Error())
 		}
 
 		c := make(chan os.Signal, 2)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 
-		s.log.Infof("Shutdown Server ...")
+		s.logger.Infof("Shutdown Server ...")
 
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.log.Fatalf("Server forced to shutdown: %v", err)
+			s.logger.Fatalf("Server forced to shutdown: %v", err)
 		}
 
-		s.log.Infof("Server exiting")
+		s.logger.Infof("Server exiting")
 	}()
 }
 
 // UseHealthCheck creates a new HealthCheck route
 func (s *Server) UseHealthCheck() {
-	s.Router.GET(s.configuration.HealthCheckEndpoint, s.healthz())
+	// Readyz probe is negative by default
+	s.readyzAvailable.Store(false)
+
+	s.Router.GET(s.configuration.HealthzEndpoint, s.healthz())
+	s.Router.GET(s.configuration.ReadyzEndpoint, s.readyz())
 }
