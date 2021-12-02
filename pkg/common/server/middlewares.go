@@ -14,8 +14,8 @@ func (s Server) tracing() gin.HandlerFunc {
 			requestID = ctx.Request.Header.Get("X-Request-Id")
 		}
 
-		s.log.Infof("Path: %v", ctx.Request.URL.Path)
-		s.log.Infof("X-Request-Id: %v", requestID)
+		s.logger.Infof("Path: %v", ctx.Request.URL.Path)
+		s.logger.Infof("X-Request-Id: %v", requestID)
 		ctx.Set("X-Request-Id", requestID)
 		ctx.Next()
 	}
@@ -28,7 +28,7 @@ func (s Server) NamespaceValidation() gin.HandlerFunc {
 
 		if namespace == "" {
 			errM := "missing namespace as query param."
-			s.log.Error(errM)
+			s.logger.Error(errM)
 			c.JSON(http.StatusBadRequest, errM)
 			c.Abort()
 			return

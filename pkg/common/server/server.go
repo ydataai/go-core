@@ -14,18 +14,19 @@ import (
 
 // Server defines a struct for server
 type Server struct {
-	log           logging.Logger
+	logger        logging.Logger
 	Router        *gin.Engine
 	httpServer    *http.Server
 	configuration HTTPServerConfiguration
+	readyzFunc    func() bool
 }
 
 // NewServer initializes a server
-func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Server {
+func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Server {
 	router := gin.Default()
 
 	s := &Server{
-		log:           log,
+		logger:        logger,
 		configuration: configuration,
 	}
 
@@ -48,20 +49,20 @@ func NewServer(log logging.Logger, configuration HTTPServerConfiguration) *Serve
 func (s *Server) Run(ctx context.Context) {
 	go func() {
 		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			s.log.Errorf("unexpected error while running server %v", err)
+			s.logger.Errorf("unexpected error while running server %v", err)
 		}
 
 		c := make(chan os.Signal, 3)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 
-		s.log.Infof("Shutdown Server ...")
+		s.logger.Infof("Shutdown Server ...")
 
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.log.Fatal("Server forced to shutdown: ", err)
+			s.logger.Fatal("Server forced to shutdown: ", err)
 		}
 
-		s.log.Infof("Server exiting")
+		s.logger.Infof("Server exiting")
 	}()
 }
 
@@ -69,19 +70,36 @@ func (s *Server) Run(ctx context.Context) {
 func (s *Server) RunSecurely(ctx context.Context) {
 	go func() {
 		if err := s.httpServer.ListenAndServeTLS(s.configuration.CertificateFile, s.configuration.CertificateKeyFile); err != http.ErrServerClosed {
-			s.log.Errorf("unexpected error while running server %v", err.Error())
+			s.logger.Errorf("unexpected error while running server %v", err.Error())
 		}
 
 		c := make(chan os.Signal, 2)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
 
-		s.log.Infof("Shutdown Server ...")
+		s.logger.Infof("Shutdown Server ...")
 
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.log.Fatalf("Server forced to shutdown: %v", err)
+			s.logger.Fatalf("Server forced to shutdown: %v", err)
 		}
 
-		s.log.Infof("Server exiting")
+		s.logger.Infof("Server exiting")
 	}()
+}
+
+// AddHealthz creates a route to LivenessProbe
+func (s *Server) AddHealthz(urls ...string) {
+	url := firstStringOfArrayWithFallback(urls, s.configuration.HealthzEndpoint)
+
+	s.Router.GET(url, s.healthz())
+}
+
+// AddReadyz creates a route to ReadinessProbe
+func (s *Server) AddReadyz(status func() bool, urls ...string) {
+	// Readyz probe is negative by default
+	s.readyzFunc = status
+
+	url := firstStringOfArrayWithFallback(urls, s.configuration.ReadyzEndpoint)
+
+	s.Router.GET(url, s.readyz())
 }
