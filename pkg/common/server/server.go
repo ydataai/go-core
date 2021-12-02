@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ydataai/go-core/pkg/common/helpers"
 	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
@@ -90,7 +89,7 @@ func (s *Server) RunSecurely(ctx context.Context) {
 
 // AddHealthz creates a route to LivenessProbe
 func (s *Server) AddHealthz(urls ...string) {
-	url := helpers.FirstStringOfArrayWithFallback(urls, s.configuration.HealthzEndpoint)
+	url := firstStringOfArrayWithFallback(urls, s.configuration.HealthzEndpoint)
 
 	s.Router.GET(url, s.healthz())
 }
@@ -100,7 +99,7 @@ func (s *Server) AddReadyz(status func() bool, urls ...string) {
 	// Readyz probe is negative by default
 	s.readyzFunc = status
 
-	url := helpers.FirstStringOfArrayWithFallback(urls, s.configuration.ReadyzEndpoint)
+	url := firstStringOfArrayWithFallback(urls, s.configuration.ReadyzEndpoint)
 
 	s.Router.GET(url, s.readyz())
 }

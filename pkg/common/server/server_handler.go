@@ -23,3 +23,11 @@ func (s *Server) readyz() gin.HandlerFunc {
 		ctx.Status(http.StatusNoContent)
 	}
 }
+
+// firstStringOfArrayWithFallback is a handle to get the first position of the array with fallback
+func firstStringOfArrayWithFallback(list []string, fallback string) string {
+	if len(list) > 0 {
+		return list[0]
+	}
+	return fallback
+}
