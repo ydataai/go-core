@@ -42,7 +42,6 @@ func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Se
 	}
 
 	s.Router = router
-	s.UseHealthCheck()
 
 	return s
 }
@@ -89,11 +88,20 @@ func (s *Server) RunSecurely(ctx context.Context) {
 	}()
 }
 
-// UseHealthCheck creates a new HealthCheck route
-func (s *Server) UseHealthCheck() {
+// AddHealthz creates a route to LivenessProbe
+func (s *Server) AddHealthz() {
+	s.Router.GET(s.configuration.HealthzEndpoint, s.healthz())
+}
+
+// AddReadyz creates a route to ReadinessProbe
+func (s *Server) AddReadyz() {
 	// Readyz probe is negative by default
 	s.readyzAvailable.Store(false)
 
-	s.Router.GET(s.configuration.HealthzEndpoint, s.healthz())
 	s.Router.GET(s.configuration.ReadyzEndpoint, s.readyz())
+}
+
+// SetReadyzState enables/disables readyz
+func (s *Server) SetReadyzState(state bool) {
+	s.readyzAvailable.Store(state)
 }
