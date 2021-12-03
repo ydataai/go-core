@@ -48,6 +48,7 @@ func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Se
 // Run when called starts the server
 func (s *Server) Run(ctx context.Context) {
 	go func() {
+		s.logger.Infof("Server Running on [%v:%v]", s.configuration.Host, s.configuration.Port)
 		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			s.logger.Errorf("unexpected error while running server %v", err)
 		}
@@ -69,6 +70,7 @@ func (s *Server) Run(ctx context.Context) {
 // RunSecurely when called starts the https server
 func (s *Server) RunSecurely(ctx context.Context) {
 	go func() {
+		s.logger.Infof("Server Running on [%v:%v]", s.configuration.Host, s.configuration.Port)
 		if err := s.httpServer.ListenAndServeTLS(s.configuration.CertificateFile, s.configuration.CertificateKeyFile); err != http.ErrServerClosed {
 			s.logger.Errorf("unexpected error while running server %v", err.Error())
 		}
