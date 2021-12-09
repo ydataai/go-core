@@ -1,8 +1,13 @@
-name: pull request
+name: Pull request
+
+
 
 on:
   pull_request:
-    branches: [ master ]
+    branches:
+    - master
+
+
 
 jobs:
   build:
