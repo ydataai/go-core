@@ -19,6 +19,7 @@ type VaultClient struct {
 	configuration VaultClientConfiguration
 	logger        logging.Logger
 	client        *api.Client
+	secret        *api.Secret
 }
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
@@ -30,57 +31,57 @@ func NewVaultClient(configuration VaultClientConfiguration, logger logging.Logge
 		return nil, err
 	}
 
-	resp, err := login(client, logger)
-	if err != nil {
-		return nil, err
-	}
-
 	vc := &VaultClient{
 		configuration: configuration,
 		logger:        logger,
 		client:        client,
 	}
 
-	go vc.renew(resp)
+	if err = vc.login(); err != nil {
+		return nil, err
+	}
+
+	go vc.renew()
 
 	return vc, nil
 }
 
 // login the k8s service account
-func login(client *api.Client, logger logging.Logger) (*api.Secret, error) {
-	logger.Info("performing vault k8s login.")
+func (vc *VaultClient) login() error {
+	vc.logger.Info("performing vault k8s login.")
 	// reads jwt from service account
 	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		return nil, fmt.Errorf("unable to read file containing service account token: %v 😱", err)
+		return fmt.Errorf("unable to read file containing service account token: %v 😱", err)
 	}
 	params := map[string]interface{}{
 		"jwt":  string(jwt),
 		"role": "datasource-controller-role", // the name of the role in Vault that was created with this app's Kubernetes service account bound to it
 	}
 	// perform login
-	resp, err := client.Logical().Write("auth/kubernetes/login", params)
+	secret, err := vc.client.Logical().Write("auth/kubernetes/login", params)
 	if err != nil {
-		return nil, fmt.Errorf("unable to log in with Kubernetes auth: %v 😱", err)
+		return fmt.Errorf("unable to log in with Kubernetes auth: %v 😱", err)
 	}
-	if resp == nil || resp.Auth == nil || resp.Auth.ClientToken == "" {
-		return nil, errors.New("login response did not return client token 😱")
+	if secret == nil || secret.Auth == nil || secret.Auth.ClientToken == "" {
+		return errors.New("login response did not return client token 😱")
 	}
 	// client update with the access token
-	logger.Info("login: client logged in successfully 🔑")
-	token := strings.TrimSuffix(resp.Auth.ClientToken, "\n")
-	client.SetToken(token)
-
-	return resp, nil
+	vc.logger.Info("login: client logged in successfully 🔑")
+	token := strings.TrimSuffix(secret.Auth.ClientToken, "\n")
+	vc.client.SetToken(token)
+	// stores login response secret
+	vc.secret = secret
+	return nil
 }
 
 // renew the token according to secret.Auth.LeaseDuration automatically
-func (vc *VaultClient) renew(secret *api.Secret) {
+func (vc *VaultClient) renew() {
 	vc.logger.Info("stating vault token auto renew ...")
 	// schedule the token renew operation
-	for range time.Tick(time.Second * time.Duration(secret.Auth.LeaseDuration-(secret.Auth.LeaseDuration/10))) {
+	for range time.Tick(time.Second * time.Duration(vc.secret.Auth.LeaseDuration-(vc.secret.Auth.LeaseDuration/10))) {
 		// perform renew
-		resp, err := vc.client.Auth().Token().Renew(secret.Auth.ClientToken, secret.Auth.LeaseDuration)
+		resp, err := vc.client.Auth().Token().Renew(vc.secret.Auth.ClientToken, vc.secret.Auth.LeaseDuration)
 		if err != nil {
 			vc.logger.Errorf("unable to renew the access token %v 😱", err)
 		}
@@ -89,6 +90,9 @@ func (vc *VaultClient) renew(secret *api.Secret) {
 			token := strings.TrimSuffix(resp.Auth.ClientToken, "\n")
 			vc.logger.Info("renew: client token renewed successfully 🔑")
 			vc.client.SetToken(token)
+		} else {
+			// new login to deal with system token expiration
+			vc.login()
 		}
 	}
 }
