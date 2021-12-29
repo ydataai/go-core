@@ -59,19 +59,19 @@ func (vc *VaultClient) login() error {
 		"role": "datasource-controller-role", // the name of the role in Vault that was created with this app's Kubernetes service account bound to it
 	}
 	// perform login
-	resp, err := vc.client.Logical().Write("auth/kubernetes/login", params)
+	secret, err := vc.client.Logical().Write("auth/kubernetes/login", params)
 	if err != nil {
 		return fmt.Errorf("unable to log in with Kubernetes auth: %v 😱", err)
 	}
-	if resp == nil || resp.Auth == nil || resp.Auth.ClientToken == "" {
+	if secret == nil || secret.Auth == nil || secret.Auth.ClientToken == "" {
 		return errors.New("login response did not return client token 😱")
 	}
 	// client update with the access token
 	vc.logger.Info("login: client logged in successfully 🔑")
-	token := strings.TrimSuffix(resp.Auth.ClientToken, "\n")
+	token := strings.TrimSuffix(secret.Auth.ClientToken, "\n")
 	vc.client.SetToken(token)
 	// stores login response secret
-	vc.secret = resp
+	vc.secret = secret
 	return nil
 }
 
