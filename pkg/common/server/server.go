@@ -35,18 +35,19 @@ func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Se
 		s.setUserID(),
 	)
 
-	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", configuration.Host, configuration.Port),
-		Handler: router,
-	}
-
 	s.Router = router
 
 	return s
 }
 
 // Run when called starts the server
+// warning: once the Run is called, you cannot modify the Handle in http.Server.
 func (s *Server) Run(ctx context.Context) {
+	s.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
+		Handler: s.Router,
+	}
+
 	go func() {
 		s.logger.Infof("Server Running on [%v:%v]", s.configuration.Host, s.configuration.Port)
 		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
@@ -68,7 +69,13 @@ func (s *Server) Run(ctx context.Context) {
 }
 
 // RunSecurely when called starts the https server
+// warning: once the Run is called, you cannot modify the Handle in http.Server.
 func (s *Server) RunSecurely(ctx context.Context) {
+	s.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
+		Handler: s.Router,
+	}
+
 	go func() {
 		s.logger.Infof("Server Running on [%v:%v]", s.configuration.Host, s.configuration.Port)
 		if err := s.httpServer.ListenAndServeTLS(s.configuration.CertificateFile, s.configuration.CertificateKeyFile); err != http.ErrServerClosed {
