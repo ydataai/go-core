@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ydataai/go-core/pkg/common/logging"
@@ -45,7 +44,7 @@ func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Se
 
 // Run when called starts the server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) Run(ctx context.Context) {
+func (s *Server) Run(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -54,6 +53,8 @@ func (s *Server) Run(ctx context.Context) {
 			s.logger.Errorf("unexpected error while running server %v", err)
 		}
 	}()
+
+	s.waitingToBeReady(readyCallbacks...)
 
 	go s.shutdown(ctx)
 }
@@ -90,13 +91,12 @@ func (s *Server) AddReadyz(status func() bool, urls ...string) {
 	s.Router.GET(url, s.readyz())
 }
 
-// WaitingToBeReady executes a callback when the server is ready.
-func (s *Server) WaitingToBeReady(callback func()) {
+// waitingToBeReady executes a callback when the server is ready.
+func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
 	for {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(s.configuration.Host, strconv.Itoa(s.configuration.Port)), s.configuration.RequestTimeout)
 		if err != nil {
 			s.logger.Debug("Server is not ready yet!")
-			time.Sleep(2 * time.Second)
 			continue
 		}
 		if conn != nil {
@@ -104,7 +104,10 @@ func (s *Server) WaitingToBeReady(callback func()) {
 			break
 		}
 	}
-	callback()
+
+	for _, callback := range readyCallbacks {
+		callback()
+	}
 }
 
 func (s *Server) httpServerSetup() {
