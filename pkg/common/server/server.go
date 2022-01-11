@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/gin-gonic/gin"
@@ -42,7 +44,7 @@ func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Se
 
 // Run when called starts the server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) Run(ctx context.Context) {
+func (s *Server) Run(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -50,24 +52,16 @@ func (s *Server) Run(ctx context.Context) {
 		if err := s.httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			s.logger.Errorf("unexpected error while running server %v", err)
 		}
-
-		c := make(chan os.Signal, 3)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-
-		s.logger.Infof("Shutdown Server ...")
-
-		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.logger.Fatal("Server forced to shutdown: ", err)
-		}
-
-		s.logger.Infof("Server exiting")
 	}()
+
+	s.waitingToBeReady(readyCallbacks...)
+
+	go s.shutdown(ctx)
 }
 
 // RunSecurely when called starts the https server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) RunSecurely(ctx context.Context) {
+func (s *Server) RunSecurely(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -75,19 +69,11 @@ func (s *Server) RunSecurely(ctx context.Context) {
 		if err := s.httpServer.ListenAndServeTLS(s.configuration.CertificateFile, s.configuration.CertificateKeyFile); err != http.ErrServerClosed {
 			s.logger.Errorf("unexpected error while running server %v", err.Error())
 		}
-
-		c := make(chan os.Signal, 2)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		<-c
-
-		s.logger.Infof("Shutdown Server ...")
-
-		if err := s.httpServer.Shutdown(ctx); err != nil {
-			s.logger.Fatalf("Server forced to shutdown: %v", err)
-		}
-
-		s.logger.Infof("Server exiting")
 	}()
+
+	s.waitingToBeReady(readyCallbacks...)
+
+	go s.shutdown(ctx)
 }
 
 // AddHealthz creates a route to LivenessProbe
@@ -112,4 +98,37 @@ func (s *Server) httpServerSetup() {
 		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
 		Handler: s.Router,
 	}
+}
+
+// waitingToBeReady executes a callback when the server is ready.
+func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
+	for {
+		conn, err := net.DialTimeout("tcp", net.JoinHostPort(s.configuration.Host, strconv.Itoa(s.configuration.Port)), s.configuration.RequestTimeout)
+		if err != nil {
+			s.logger.Debug("Server is not ready yet!")
+			continue
+		}
+		if conn != nil {
+			s.logger.Infof("Server is ready!")
+			break
+		}
+	}
+
+	for _, callback := range readyCallbacks {
+		callback()
+	}
+}
+
+func (s *Server) shutdown(ctx context.Context) {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+
+	s.logger.Infof("Shutdown Server ...")
+
+	if err := s.httpServer.Shutdown(ctx); err != nil {
+		s.logger.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	s.logger.Infof("Server exiting")
 }
