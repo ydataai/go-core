@@ -61,7 +61,7 @@ func (s *Server) Run(ctx context.Context, readyCallbacks ...func()) {
 
 // RunSecurely when called starts the https server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) RunSecurely(ctx context.Context) {
+func (s *Server) RunSecurely(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -70,6 +70,8 @@ func (s *Server) RunSecurely(ctx context.Context) {
 			s.logger.Errorf("unexpected error while running server %v", err.Error())
 		}
 	}()
+
+	s.waitingToBeReady(readyCallbacks...)
 
 	go s.shutdown(ctx)
 }
@@ -91,6 +93,13 @@ func (s *Server) AddReadyz(status func() bool, urls ...string) {
 	s.Router.GET(url, s.readyz())
 }
 
+func (s *Server) httpServerSetup() {
+	s.httpServer = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
+		Handler: s.Router,
+	}
+}
+
 // waitingToBeReady executes a callback when the server is ready.
 func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
 	for {
@@ -107,13 +116,6 @@ func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
 
 	for _, callback := range readyCallbacks {
 		callback()
-	}
-}
-
-func (s *Server) httpServerSetup() {
-	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
-		Handler: s.Router,
 	}
 }
 
