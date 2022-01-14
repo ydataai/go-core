@@ -24,7 +24,7 @@ func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClien
 		logger.Fatalf("Error while connect to Redis: %s", config.Address)
 	}
 	// make sure the redis server is ready to write.
-	err = client.SetNX(ctx, "lastUpdate", time.Now(), time.Minute).Err()
+	err = client.Set(ctx, "lastUpdate", time.Now(), time.Minute).Err()
 	if err != nil {
 		logger.Fatalf("Redis Server is ready-only. Err: %v", err)
 	}
