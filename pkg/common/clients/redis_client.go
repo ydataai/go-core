@@ -18,7 +18,7 @@ type RedisClient struct {
 
 // NewRedisClient creates a new RedisClient (redis.Client) instance.
 func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
-	// CA cert configuration for TLS connection
+	// CA and Cert configuration for TLS connection
 	certPool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(config.CACert)
 	if err != nil {
@@ -27,12 +27,20 @@ func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClien
 	if ok := certPool.AppendCertsFromPEM(caCert); !ok {
 		logger.Fatalf("Error to add CA Cert to cert pool. Err: %v", err)
 	}
+	cert, err := tls.LoadX509KeyPair(config.Cert, config.CertKey)
+	if err != nil {
+		logger.Fatalf("Error to read Redis Cert file from: %s, %s. Err: %v", config.Cert, config.CertKey, err)
+	}
 	// redis client initialization
-	client := redis.NewClient(&redis.Options{
-		Addr: config.Address,
+	client := redis.NewFailoverClient(&redis.FailoverOptions{
+		MasterName:    config.MasterName,
+		SentinelAddrs: config.Address,
 		TLSConfig: &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			RootCAs:    certPool,
+			Certificates: []tls.Certificate{
+				cert,
+			},
 		},
 	})
 	ctx := context.Background()
