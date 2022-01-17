@@ -6,6 +6,7 @@ import "github.com/kelseyhightower/envconfig"
 type RedisConfiguration struct {
 	// Address represents host:port
 	Address string `envconfig:"REDIS_ADDRESS" required:"true"`
+	CACert  string `envconfig:"REDIS_CACERT" required:"true"`
 }
 
 // LoadFromEnvVars for RedisConfiguration.
