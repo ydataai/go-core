@@ -53,7 +53,7 @@ func newRedisClusterClient(config RedisConfiguration, logger logging.Logger) Red
 		})}
 }
 
-func newRedisSingleNodeClient(config RedisConfiguration, logger logging.Logger) RedisClient {
+func newRedisSingleNodeClient(config RedisConfiguration) RedisClient {
 	return redisClientImpl{
 		client: redis.NewClient(&redis.Options{
 			Addr: config.Address[0],
@@ -63,16 +63,17 @@ func newRedisSingleNodeClient(config RedisConfiguration, logger logging.Logger) 
 // NewRedisClient creates a new RedisClient (redis.Client) instance.
 func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
 	var client RedisClient
+	var err error
 
 	if config.CACert != "" && config.Cert != "" && config.CertKey != "" {
 		client = newRedisClusterClient(config, logger)
 	} else {
-		client = newRedisSingleNodeClient(config, logger)
+		client = newRedisSingleNodeClient(config)
 	}
 
 	ctx := context.Background()
 	// test server with ping/pong
-	err := client.Ping(ctx).Err()
+	err = client.Ping(ctx).Err()
 	if err != nil {
 		logger.Fatalf("Error while connect to Redis: %s. Err: %v", config.Address, err)
 	}
