@@ -24,6 +24,32 @@ type redisClientImpl struct {
 	client *redis.Client
 }
 
+// NewRedisClient creates a new RedisClient (redis.Client) instance.
+func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
+	var client RedisClient
+	var err error
+
+	if config.CACert != "" && config.Cert != "" && config.CertKey != "" {
+		client = newRedisClusterClient(config, logger)
+	} else {
+		client = newRedisSingleNodeClient(config)
+	}
+
+	ctx := context.Background()
+	// test server with ping/pong
+	err = client.Ping(ctx).Err()
+	if err != nil {
+		logger.Fatalf("Error while connect to Redis: %s. Err: %v", config.Address, err)
+	}
+	// make sure the redis server is ready to write.
+	err = client.Set(ctx, "lastUpdate", time.Now(), time.Minute).Err()
+	if err != nil {
+		logger.Fatalf("Redis Server is ready-only. Err: %v", err)
+	}
+
+	return client
+}
+
 func newRedisClusterClient(config RedisConfiguration, logger logging.Logger) RedisClient {
 	// CA and Cert configuration for TLS connection
 	certPool := x509.NewCertPool()
@@ -58,32 +84,6 @@ func newRedisSingleNodeClient(config RedisConfiguration) RedisClient {
 		client: redis.NewClient(&redis.Options{
 			Addr: config.Address[0],
 		})}
-}
-
-// NewRedisClient creates a new RedisClient (redis.Client) instance.
-func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
-	var client RedisClient
-	var err error
-
-	if config.CACert != "" && config.Cert != "" && config.CertKey != "" {
-		client = newRedisClusterClient(config, logger)
-	} else {
-		client = newRedisSingleNodeClient(config)
-	}
-
-	ctx := context.Background()
-	// test server with ping/pong
-	err = client.Ping(ctx).Err()
-	if err != nil {
-		logger.Fatalf("Error while connect to Redis: %s. Err: %v", config.Address, err)
-	}
-	// make sure the redis server is ready to write.
-	err = client.Set(ctx, "lastUpdate", time.Now(), time.Minute).Err()
-	if err != nil {
-		logger.Fatalf("Redis Server is ready-only. Err: %v", err)
-	}
-
-	return client
 }
 
 func (c redisClientImpl) Get(ctx context.Context, key string) *redis.StringCmd {
