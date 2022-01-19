@@ -16,6 +16,7 @@ type RedisClient interface {
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
+	Ping(ctx context.Context) *redis.StatusCmd
 }
 
 // RedisClient represents the Redis client.
@@ -23,8 +24,7 @@ type redisClientImpl struct {
 	client *redis.Client
 }
 
-// NewRedisClient creates a new RedisClient (redis.Client) instance.
-func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
+func newRedisClusterClient(config RedisConfiguration, logger logging.Logger) RedisClient {
 	// CA and Cert configuration for TLS connection
 	certPool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(config.CACert)
@@ -39,20 +39,40 @@ func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClien
 		logger.Fatalf("Error to read Redis Cert file from: %s, %s. Err: %v", config.Cert, config.CertKey, err)
 	}
 	// redis client initialization
-	client := redis.NewFailoverClient(&redis.FailoverOptions{
-		MasterName:    config.MasterName,
-		SentinelAddrs: config.Address,
-		TLSConfig: &tls.Config{
-			MinVersion: tls.VersionTLS12,
-			RootCAs:    certPool,
-			Certificates: []tls.Certificate{
-				cert,
+	return redisClientImpl{
+		client: redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:    config.MasterName,
+			SentinelAddrs: config.Address,
+			TLSConfig: &tls.Config{
+				MinVersion: tls.VersionTLS12,
+				RootCAs:    certPool,
+				Certificates: []tls.Certificate{
+					cert,
+				},
 			},
-		},
-	})
+		})}
+}
+
+func newRedisSingleNodeClient(config RedisConfiguration, logger logging.Logger) RedisClient {
+	return redisClientImpl{
+		client: redis.NewClient(&redis.Options{
+			Addr: config.Address[0],
+		})}
+}
+
+// NewRedisClient creates a new RedisClient (redis.Client) instance.
+func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClient {
+	var client RedisClient
+
+	if config.CACert != "" && config.Cert != "" && config.CertKey != "" {
+		client = newRedisClusterClient(config, logger)
+	} else {
+		client = newRedisSingleNodeClient(config, logger)
+	}
+
 	ctx := context.Background()
 	// test server with ping/pong
-	err = client.Ping(ctx).Err()
+	err := client.Ping(ctx).Err()
 	if err != nil {
 		logger.Fatalf("Error while connect to Redis: %s. Err: %v", config.Address, err)
 	}
@@ -61,7 +81,8 @@ func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClien
 	if err != nil {
 		logger.Fatalf("Redis Server is ready-only. Err: %v", err)
 	}
-	return redisClientImpl{client: client}
+
+	return client
 }
 
 func (c redisClientImpl) Get(ctx context.Context, key string) *redis.StringCmd {
@@ -78,4 +99,8 @@ func (c redisClientImpl) Publish(ctx context.Context, channel string, message in
 
 func (c redisClientImpl) Subscribe(ctx context.Context, channels ...string) *redis.PubSub {
 	return c.client.Subscribe(ctx, channels...)
+}
+
+func (c redisClientImpl) Ping(ctx context.Context) *redis.StatusCmd {
+	return c.client.Ping(ctx)
 }

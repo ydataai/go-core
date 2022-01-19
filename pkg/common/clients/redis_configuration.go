@@ -6,10 +6,10 @@ import "github.com/kelseyhightower/envconfig"
 type RedisConfiguration struct {
 	// Address represents host:port list separated by ,
 	Address    []string `envconfig:"REDIS_ADDRESS" required:"true"`
-	MasterName string   `envconfig:"REDIS_MASTER_NAME" required:"true"`
-	CACert     string   `envconfig:"REDIS_CA_CERT" required:"true"`
-	Cert       string   `envconfig:"REDIS_CERT" required:"true"`
-	CertKey    string   `envconfig:"REDIS_CERT_KEY" required:"true"`
+	MasterName string   `envconfig:"REDIS_MASTER_NAME"`
+	CACert     string   `envconfig:"REDIS_CA_CERT"`
+	Cert       string   `envconfig:"REDIS_CERT"`
+	CertKey    string   `envconfig:"REDIS_CERT_KEY"`
 }
 
 // LoadFromEnvVars for RedisConfiguration.
