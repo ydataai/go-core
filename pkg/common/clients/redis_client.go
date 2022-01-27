@@ -75,6 +75,7 @@ func newRedisClusterClient(config RedisConfiguration, logger logging.Logger) Red
 				Certificates: []tls.Certificate{
 					cert,
 				},
+				InsecureSkipVerify: config.InsecureSkipVerify,
 			},
 		}),
 	}
