@@ -11,6 +11,7 @@ type ManagerConfiguration struct {
 	Port                 int    `envconfig:"MANAGER_PORT" default:"9443"`
 	MetricsServerPort    int    `envconfig:"METRICS_SERVER_PORT" default:"8080"`
 	HealthProbeAddress   string `envconfig:"HEALTH_PROBE_ADDRESS" default:":8081"`
+	EnableWebhooks       bool   `envconfig:"ENABLE_WEBHOOKS" default:"true"`
 }
 
 // LoadFromEnvVars from the Manager
