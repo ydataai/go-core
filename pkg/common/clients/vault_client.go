@@ -12,18 +12,18 @@ import (
 	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
-const path = "datasources"
-
 // VaultClient defines the Vault client struct, holding all the required dependencies
 type VaultClient struct {
 	configuration VaultClientConfiguration
+	path          string
+	role          string
 	logger        logging.Logger
 	client        *api.Client
 	secret        *api.Secret
 }
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
-func NewVaultClient(configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
+func NewVaultClient(path, role string, configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
 	config := &api.Config{Address: configuration.VaultURL}
 
 	client, err := api.NewClient(config)
@@ -33,6 +33,8 @@ func NewVaultClient(configuration VaultClientConfiguration, logger logging.Logge
 
 	vc := &VaultClient{
 		configuration: configuration,
+		path:          path,
+		role:          role,
 		logger:        logger,
 		client:        client,
 	}
@@ -56,7 +58,7 @@ func (vc *VaultClient) login() error {
 	}
 	params := map[string]interface{}{
 		"jwt":  string(jwt),
-		"role": "datasource-controller-role", // the name of the role in Vault that was created with this app's Kubernetes service account bound to it
+		"role": vc.role, // the name of the role in Vault that was created with this app's Kubernetes service account bound to it
 	}
 	// perform login
 	secret, err := vc.client.Logical().Write("auth/kubernetes/login", params)
@@ -97,12 +99,12 @@ func (vc *VaultClient) renew() {
 	}
 }
 
-// StoreCredentials receives the name of the DataSource and the respective map of credentials and attempts to store them
+// StoreCredentials receives the name and the respective map of credentials and attempts to store them
 // on the Vault server.
-func (vc *VaultClient) StoreCredentials(datasourceName string, credentials map[string]string) error {
+func (vc *VaultClient) StoreCredentials(name string, credentials map[string]string) error {
 	vc.logger.Info("Sending credentials to Vault ☄️")
 
-	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/data/%s", path, datasourceName), map[string]interface{}{
+	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/data/%s", vc.path, name), map[string]interface{}{
 		"data": credentials,
 	})
 	if err != nil {
@@ -114,12 +116,12 @@ func (vc *VaultClient) StoreCredentials(datasourceName string, credentials map[s
 	return nil
 }
 
-// GetCredentials receives the name of the DataSource and attemps to retrieve the map of credentials present
+// GetCredentials receives the name and attemps to retrieve the map of credentials present
 // on the Vault server.
-func (vc *VaultClient) GetCredentials(datasourceName string) (*config.Credentials, error) {
+func (vc *VaultClient) GetCredentials(name string) (*config.Credentials, error) {
 	vc.logger.Info("Fetching credentials from Vault ☄️")
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", path, datasourceName))
+	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", vc.path, name))
 	if err != nil {
 		vc.logger.Errorf("Unable to fetch credentials from Vault 😱. Err: %v", err)
 		return nil, err
@@ -146,12 +148,12 @@ func (vc *VaultClient) GetCredentials(datasourceName string) (*config.Credential
 	return &credentials, nil
 }
 
-// DeleteCredentials receives the name of the DataSource and attempts to delete the existing credentials on Vault.
+// DeleteCredentials receives the name and attempts to delete the existing credentials on Vault.
 // Is performs a soft delete, per docs > https://www.vaultproject.io/docs/commands/kv/delete
-func (vc *VaultClient) DeleteCredentials(datasourceName string) error {
+func (vc *VaultClient) DeleteCredentials(name string) error {
 	vc.logger.Info("Deleting credentials from Vault ☄️")
 
-	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", path, datasourceName))
+	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", vc.path, name))
 	if err != nil {
 		vc.logger.Errorf("Unable to delete credentials from Vault 😱. Err: %v", err)
 		return err
@@ -164,9 +166,9 @@ func (vc *VaultClient) DeleteCredentials(datasourceName string) error {
 // CheckIfEngineExists attempts to call the /tune API endpoint on the Secrets Engine. Should it fail, it might be an
 // indication that the Secrets Engine is not created, which it's useful to know whether or not to call CreateEngine
 func (vc *VaultClient) CheckIfEngineExists() bool {
-	vc.logger.Info("Checking if datasource vault engine exists☄️")
+	vc.logger.Info("Checking if vault engine exists☄️")
 
-	epath := "sys/mounts/" + path + "/tune"
+	epath := fmt.Sprintf("sys/mounts/%s/tune", vc.path)
 
 	if _, err := vc.client.Logical().Read(epath); err != nil {
 		switch err.(type) {
