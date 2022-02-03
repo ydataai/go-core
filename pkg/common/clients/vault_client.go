@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -277,22 +278,31 @@ func (vc *VaultClient) Patch(path, uid string, data map[string]interface{}) erro
 		return fmt.Errorf("[Vault] Unable to get the path: '%s/%s' 😱. Err: %v", path, uid, err)
 	}
 
-	// if it doesn't exist, then create
-	if secret == nil {
-		err := vc.Put(path, uid, data)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
-	// if it exists, then update
-	for key, value := range data {
-		secret.Data[key] = value
-	}
-	err = vc.Put(path, uid, data)
+	_, err = vc.client.Logical().JSONMergePatch(context.Background(), fmt.Sprintf("%s/%s", path, uid), data)
 	if err != nil {
-		return err
+		// If it's a 405, that probably means the server is running a pre-1.9
+		// Vault version that doesn't support the HTTP PATCH method.
+		if re, ok := err.(*api.ResponseError); ok && re.StatusCode == 405 {
+			// if it doesn't exist, then create
+			if secret == nil {
+				err := vc.Put(path, uid, data)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+
+			// if it exists, then update
+			for key, value := range data {
+				secret.Data[key] = value
+			}
+			err = vc.Put(path, uid, secret.Data)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("[Vault] Unable to add the path: '%s/%s' 😱. Err: %v", path, uid, err)
+		}
 	}
 
 	vc.logger.Infof("[Vault] Added the '%s/%s' ☄️", path, uid)
