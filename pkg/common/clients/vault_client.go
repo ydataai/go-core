@@ -15,7 +15,6 @@ import (
 // VaultClient defines the Vault client struct, holding all the required dependencies
 type VaultClient struct {
 	configuration VaultClientConfiguration
-	path          string
 	role          string
 	logger        logging.Logger
 	client        *api.Client
@@ -23,7 +22,7 @@ type VaultClient struct {
 }
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
-func NewVaultClient(path, role string, configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
+func NewVaultClient(role string, configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
 	config := &api.Config{Address: configuration.VaultURL}
 
 	client, err := api.NewClient(config)
@@ -33,7 +32,6 @@ func NewVaultClient(path, role string, configuration VaultClientConfiguration, l
 
 	vc := &VaultClient{
 		configuration: configuration,
-		path:          path,
 		role:          role,
 		logger:        logger,
 		client:        client,
@@ -43,13 +41,22 @@ func NewVaultClient(path, role string, configuration VaultClientConfiguration, l
 		return nil, err
 	}
 
-	go vc.renew()
-
 	return vc, nil
 }
 
 // login the k8s service account
 func (vc *VaultClient) login() error {
+	// Make sure it's development mode
+	if vc.configuration.VaultDevMode {
+		vc.logger.Info("[development mode] performing vault login.")
+		if vc.configuration.VaultToken == "" {
+			return errors.New("unable to get token as env var ('VAULT_TOKEN') 😱")
+		}
+		vc.client.SetToken(vc.configuration.VaultToken)
+		return nil
+	}
+
+	// Production mode
 	vc.logger.Info("performing vault k8s login.")
 	// reads jwt from service account
 	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -74,6 +81,10 @@ func (vc *VaultClient) login() error {
 	vc.client.SetToken(token)
 	// stores login response secret
 	vc.secret = secret
+
+	// do the token renewal cycle
+	go vc.renew()
+
 	return nil
 }
 
@@ -101,10 +112,10 @@ func (vc *VaultClient) renew() {
 
 // StoreCredentials receives the name and the respective map of credentials and attempts to store them
 // on the Vault server.
-func (vc *VaultClient) StoreCredentials(name string, credentials map[string]string) error {
+func (vc *VaultClient) StoreCredentials(path, name string, credentials map[string]string) error {
 	vc.logger.Info("Sending credentials to Vault ☄️")
 
-	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/data/%s", vc.path, name), map[string]interface{}{
+	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/data/%s", path, name), map[string]interface{}{
 		"data": credentials,
 	})
 	if err != nil {
@@ -118,10 +129,10 @@ func (vc *VaultClient) StoreCredentials(name string, credentials map[string]stri
 
 // GetCredentials receives the name and attemps to retrieve the map of credentials present
 // on the Vault server.
-func (vc *VaultClient) GetCredentials(name string) (*config.Credentials, error) {
+func (vc *VaultClient) GetCredentials(path, name string) (*config.Credentials, error) {
 	vc.logger.Info("Fetching credentials from Vault ☄️")
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", vc.path, name))
+	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", path, name))
 	if err != nil {
 		vc.logger.Errorf("Unable to fetch credentials from Vault 😱. Err: %v", err)
 		return nil, err
@@ -150,10 +161,10 @@ func (vc *VaultClient) GetCredentials(name string) (*config.Credentials, error) 
 
 // DeleteCredentials receives the name and attempts to delete the existing credentials on Vault.
 // Is performs a soft delete, per docs > https://www.vaultproject.io/docs/commands/kv/delete
-func (vc *VaultClient) DeleteCredentials(name string) error {
+func (vc *VaultClient) DeleteCredentials(path, name string) error {
 	vc.logger.Info("Deleting credentials from Vault ☄️")
 
-	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", vc.path, name))
+	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", path, name))
 	if err != nil {
 		vc.logger.Errorf("Unable to delete credentials from Vault 😱. Err: %v", err)
 		return err
@@ -165,10 +176,10 @@ func (vc *VaultClient) DeleteCredentials(name string) error {
 
 // CheckIfEngineExists attempts to call the /tune API endpoint on the Secrets Engine. Should it fail, it might be an
 // indication that the Secrets Engine is not created, which it's useful to know whether or not to call CreateEngine
-func (vc *VaultClient) CheckIfEngineExists() bool {
+func (vc *VaultClient) CheckIfEngineExists(path string) bool {
 	vc.logger.Info("Checking if vault engine exists☄️")
 
-	epath := fmt.Sprintf("sys/mounts/%s/tune", vc.path)
+	epath := fmt.Sprintf("sys/mounts/%s/tune", path)
 
 	if _, err := vc.client.Logical().Read(epath); err != nil {
 		switch err.(type) {
@@ -181,4 +192,109 @@ func (vc *VaultClient) CheckIfEngineExists() bool {
 		}
 	}
 	return true
+}
+
+// List ...
+func (vc *VaultClient) List(path string) (interface{}, error) {
+	vc.logger.Infof("[Vault] Listing the path: '%s' ☄️", path)
+
+	secret, err := vc.client.Logical().List(path)
+	if err != nil {
+		vc.logger.Errorf("[Vault] Unable to list the path: '%s' 😱. Err: %v", path, err)
+		return nil, err
+	}
+
+	if secret == nil {
+		vc.logger.Infof("[Vault] ❌ No data found in path: '%s'", path)
+		return nil, nil
+	}
+
+	vc.logger.Infof("[Vault] Listed the path: '%s' ☄️", path)
+	return secret.Data["keys"], nil
+}
+
+// Get ...
+func (vc *VaultClient) Get(path, uid string) (map[string]interface{}, error) {
+	vc.logger.Infof("[Vault] Getting the '%s/%s' ☄️", path, uid)
+
+	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	if err != nil {
+		vc.logger.Errorf("[Vault] Unable to get '%s/%s' 😱. Err: %v", path, uid, err)
+		return nil, err
+	}
+
+	if secret == nil {
+		vc.logger.Infof("[Vault] ❌ No data found: %s/%s", path, uid)
+		return nil, nil
+	}
+
+	vc.logger.Infof("[Vault] Got the '%s/%s' ☄️", path, uid)
+	return secret.Data, nil
+}
+
+// Delete ...
+func (vc *VaultClient) Delete(path, uid string) error {
+	vc.logger.Infof("[Vault] Deleting the path: '%s/%s'", path, uid)
+
+	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	if err != nil {
+		return fmt.Errorf("[Vault] Unable to delete the path: '%s/%s' 😱. Err: %v", path, uid, err)
+	}
+
+	if secret == nil {
+		vc.logger.Infof("[Vault] ❌ No data found in path: '%s/%s'", path, uid)
+		return nil
+	}
+
+	_, err = vc.client.Logical().Delete(fmt.Sprintf("%s/%s", path, uid))
+	if err != nil {
+		return fmt.Errorf("[Vault] Unable to delete the path: '%s/%s' 😱. Err: %v", path, uid, err)
+	}
+
+	vc.logger.Infof("[Vault] Deleted the path: '%s/%s' ☄️", path, uid)
+	return nil
+}
+
+// Put ...
+func (vc *VaultClient) Put(path, uid string, data map[string]interface{}) error {
+	vc.logger.Infof("[Vault] Creating the '%s/%s' ☄️", path, uid)
+
+	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/%s", path, uid), data)
+	if err != nil {
+		return fmt.Errorf("[Vault] Unable to create '%s/%s' 😱. Err: %v", path, uid, err)
+	}
+
+	vc.logger.Infof("[Vault] Created the '%s/%s' ☄️", path, uid)
+	return nil
+}
+
+// Patch ...
+func (vc *VaultClient) Patch(path, uid string, data map[string]interface{}) error {
+	vc.logger.Infof("[Vault] Adding the '%s/%s' ☄️", path, uid)
+
+	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	if err != nil {
+		return fmt.Errorf("[Vault] Unable to get the path: '%s/%s' 😱. Err: %v", path, uid, err)
+	}
+
+	// if it doesn't exist, then create
+	if secret == nil {
+		err := vc.Put(path, uid, data)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// if it exists, then update
+	for key, value := range data {
+		secret.Data[key] = value
+	}
+	err = vc.Put(path, uid, data)
+	if err != nil {
+		return err
+	}
+
+	vc.logger.Infof("[Vault] Added the '%s/%s' ☄️", path, uid)
+	return nil
 }
