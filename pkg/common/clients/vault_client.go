@@ -111,12 +111,12 @@ func (vc *VaultClient) renew() {
 	}
 }
 
-// StoreCredentials receives the name and the respective map of credentials and attempts to store them
+// StoreCredentials receives the path and the respective map of credentials and attempts to store them
 // on the Vault server.
-func (vc *VaultClient) StoreCredentials(path, name string, credentials map[string]string) error {
+func (vc *VaultClient) StoreCredentials(path string, credentials map[string]string) error {
 	vc.logger.Info("Sending credentials to Vault ☄️")
 
-	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/data/%s", path, name), map[string]interface{}{
+	_, err := vc.client.Logical().Write(path, map[string]interface{}{
 		"data": credentials,
 	})
 	if err != nil {
@@ -128,12 +128,12 @@ func (vc *VaultClient) StoreCredentials(path, name string, credentials map[strin
 	return nil
 }
 
-// GetCredentials receives the name and attemps to retrieve the map of credentials present
+// GetCredentials receives the path and attemps to retrieve the map of credentials present
 // on the Vault server.
-func (vc *VaultClient) GetCredentials(path, name string) (*config.Credentials, error) {
+func (vc *VaultClient) GetCredentials(path string) (*config.Credentials, error) {
 	vc.logger.Info("Fetching credentials from Vault ☄️")
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/data/%s", path, name))
+	secret, err := vc.client.Logical().Read(path)
 	if err != nil {
 		vc.logger.Errorf("Unable to fetch credentials from Vault 😱. Err: %v", err)
 		return nil, err
@@ -160,12 +160,12 @@ func (vc *VaultClient) GetCredentials(path, name string) (*config.Credentials, e
 	return &credentials, nil
 }
 
-// DeleteCredentials receives the name and attempts to delete the existing credentials on Vault.
+// DeleteCredentials receives the path and attempts to delete the existing credentials on Vault.
 // Is performs a soft delete, per docs > https://www.vaultproject.io/docs/commands/kv/delete
-func (vc *VaultClient) DeleteCredentials(path, name string) error {
+func (vc *VaultClient) DeleteCredentials(path string) error {
 	vc.logger.Info("Deleting credentials from Vault ☄️")
 
-	_, err := vc.client.Logical().Delete(fmt.Sprintf("%s/data/%s", path, name))
+	_, err := vc.client.Logical().Delete(path)
 	if err != nil {
 		vc.logger.Errorf("Unable to delete credentials from Vault 😱. Err: %v", err)
 		return err
@@ -215,77 +215,77 @@ func (vc *VaultClient) List(path string) (interface{}, error) {
 }
 
 // Get ...
-func (vc *VaultClient) Get(path, uid string) (map[string]interface{}, error) {
-	vc.logger.Infof("[Vault] Getting the '%s/%s' ☄️", path, uid)
+func (vc *VaultClient) Get(path string) (map[string]interface{}, error) {
+	vc.logger.Infof("[Vault] Getting the '%s' ☄️", path)
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	secret, err := vc.client.Logical().Read(path)
 	if err != nil {
-		vc.logger.Errorf("[Vault] Unable to get '%s/%s' 😱. Err: %v", path, uid, err)
+		vc.logger.Errorf("[Vault] Unable to get '%s' 😱. Err: %v", path, err)
 		return nil, err
 	}
 
 	if secret == nil {
-		vc.logger.Infof("[Vault] ❌ No data found: %s/%s", path, uid)
+		vc.logger.Infof("[Vault] ❌ No data found: %s", path)
 		return nil, nil
 	}
 
-	vc.logger.Infof("[Vault] Got the '%s/%s' ☄️", path, uid)
+	vc.logger.Infof("[Vault] Got the '%s' ☄️", path)
 	return secret.Data, nil
 }
 
 // Delete ...
-func (vc *VaultClient) Delete(path, uid string) error {
-	vc.logger.Infof("[Vault] Deleting the path: '%s/%s'", path, uid)
+func (vc *VaultClient) Delete(path string) error {
+	vc.logger.Infof("[Vault] Deleting the path: '%s'", path)
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	secret, err := vc.client.Logical().Read(path)
 	if err != nil {
-		return fmt.Errorf("[Vault] Unable to delete the path: '%s/%s' 😱. Err: %v", path, uid, err)
+		return fmt.Errorf("[Vault] Unable to delete the path: '%s' 😱. Err: %v", path, err)
 	}
 
 	if secret == nil {
-		vc.logger.Infof("[Vault] ❌ No data found in path: '%s/%s'", path, uid)
+		vc.logger.Infof("[Vault] ❌ No data found in path: '%s'", path)
 		return nil
 	}
 
-	_, err = vc.client.Logical().Delete(fmt.Sprintf("%s/%s", path, uid))
+	_, err = vc.client.Logical().Delete(path)
 	if err != nil {
-		return fmt.Errorf("[Vault] Unable to delete the path: '%s/%s' 😱. Err: %v", path, uid, err)
+		return fmt.Errorf("[Vault] Unable to delete the path: '%s' 😱. Err: %v", path, err)
 	}
 
-	vc.logger.Infof("[Vault] Deleted the path: '%s/%s' ☄️", path, uid)
+	vc.logger.Infof("[Vault] Deleted the path: '%s' ☄️", path)
 	return nil
 }
 
 // Put ...
-func (vc *VaultClient) Put(path, uid string, data map[string]interface{}) error {
-	vc.logger.Infof("[Vault] Creating the '%s/%s' ☄️", path, uid)
+func (vc *VaultClient) Put(path string, data map[string]interface{}) error {
+	vc.logger.Infof("[Vault] Creating the '%s' ☄️", path)
 
-	_, err := vc.client.Logical().Write(fmt.Sprintf("%s/%s", path, uid), data)
+	_, err := vc.client.Logical().Write(path, data)
 	if err != nil {
-		return fmt.Errorf("[Vault] Unable to create '%s/%s' 😱. Err: %v", path, uid, err)
+		return fmt.Errorf("[Vault] Unable to create '%s' 😱. Err: %v", path, err)
 	}
 
-	vc.logger.Infof("[Vault] Created the '%s/%s' ☄️", path, uid)
+	vc.logger.Infof("[Vault] Created the '%s' ☄️", path)
 	return nil
 }
 
 // Patch ...
-func (vc *VaultClient) Patch(path, uid string, data map[string]interface{}) error {
-	vc.logger.Infof("[Vault] Adding the '%s/%s' ☄️", path, uid)
+func (vc *VaultClient) Patch(path string, data map[string]interface{}) error {
+	vc.logger.Infof("[Vault] Adding the '%s' ☄️", path)
 
-	secret, err := vc.client.Logical().Read(fmt.Sprintf("%s/%s", path, uid))
+	secret, err := vc.client.Logical().Read(path)
 	if err != nil {
-		return fmt.Errorf("[Vault] Unable to get the path: '%s/%s' 😱. Err: %v", path, uid, err)
+		return fmt.Errorf("[Vault] Unable to get the path: '%s' 😱. Err: %v", path, err)
 	}
 
-	_, err = vc.client.Logical().JSONMergePatch(context.Background(), fmt.Sprintf("%s/%s", path, uid), data)
+	_, err = vc.client.Logical().JSONMergePatch(context.Background(), path, data)
 	if err != nil {
 		// If it's a 405, that probably means the server is running a pre-1.9
 		// Vault version that doesn't support the HTTP PATCH method.
 		if re, ok := err.(*api.ResponseError); ok && re.StatusCode == 405 {
 			// if it doesn't exist, then create
 			if secret == nil {
-				err := vc.Put(path, uid, data)
+				err := vc.Put(path, data)
 				if err != nil {
 					return err
 				}
@@ -296,15 +296,15 @@ func (vc *VaultClient) Patch(path, uid string, data map[string]interface{}) erro
 			for key, value := range data {
 				secret.Data[key] = value
 			}
-			err = vc.Put(path, uid, secret.Data)
+			err = vc.Put(path, secret.Data)
 			if err != nil {
 				return err
 			}
 		} else {
-			return fmt.Errorf("[Vault] Unable to add the path: '%s/%s' 😱. Err: %v", path, uid, err)
+			return fmt.Errorf("[Vault] Unable to add the path: '%s' 😱. Err: %v", path, err)
 		}
 	}
 
-	vc.logger.Infof("[Vault] Added the '%s/%s' ☄️", path, uid)
+	vc.logger.Infof("[Vault] Added the '%s' ☄️", path)
 	return nil
 }
