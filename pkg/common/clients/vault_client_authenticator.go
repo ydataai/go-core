@@ -12,14 +12,15 @@ type Authenticator interface {
 	Authenticate(vc *VaultClient) error
 }
 
-// K8sAuthenticator is used to authenticate using Kubernetes.
+// K8sAuthenticator defines a struct for authenticating with Kubernetes.
 type K8sAuthenticator struct{}
 
-// NewK8sAuthenticator defines a new K8sAuthenticator
+// NewK8sAuthenticator defines a new K8sAuthenticator struct.
 func NewK8sAuthenticator() Authenticator {
 	return &K8sAuthenticator{}
 }
 
+// Authenticate is used to authenticate using Kubernetes.
 func (a *K8sAuthenticator) Authenticate(vc *VaultClient) error {
 	vc.logger.Info("performing vault k8s login.")
 	// reads jwt from service account
@@ -62,6 +63,7 @@ func NewLocalAuthenticator(token string) Authenticator {
 	return &LocalAuthenticator{token: token}
 }
 
+// Authenticate is used to authenticate local (development mode).
 func (a *LocalAuthenticator) Authenticate(vc *VaultClient) error {
 	vc.client.SetToken(a.token)
 	return nil
