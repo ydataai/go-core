@@ -271,40 +271,36 @@ func (vc *VaultClient) Put(path string, data map[string]interface{}) error {
 
 // Patch ...
 func (vc *VaultClient) Patch(path string, data map[string]interface{}) error {
-	vc.logger.Infof("[Vault] Adding the '%s' ☄️", path)
-
-	secret, err := vc.client.Logical().Read(path)
+	vc.logger.Infof("[Vault] Patch the '%s' ☄️", path)
+	// try to patch the path
+	_, err := vc.client.Logical().JSONMergePatch(context.Background(), path, data)
+	if err == nil {
+		return nil
+	}
+	// If it's a 405, that probably means the server is running a pre-1.9
+	// Vault version that doesn't support the HTTP PATCH method.
+	if re, ok := err.(*api.ResponseError); ok && re.StatusCode != 405 {
+		return fmt.Errorf("[Vault] Unable to add the path: '%s' 😱. Err: %v", path, err)
+	}
+	// get data to update it in memory
+	existingData, err := vc.Get(path)
 	if err != nil {
 		return fmt.Errorf("[Vault] Unable to get the path: '%s' 😱. Err: %v", path, err)
 	}
-
-	_, err = vc.client.Logical().JSONMergePatch(context.Background(), path, data)
-	if err != nil {
-		// If it's a 405, that probably means the server is running a pre-1.9
-		// Vault version that doesn't support the HTTP PATCH method.
-		if re, ok := err.(*api.ResponseError); ok && re.StatusCode == 405 {
-			// if it doesn't exist, then create
-			if secret == nil {
-				err := vc.Put(path, data)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
-
-			// if it exists, then update
-			for key, value := range data {
-				secret.Data[key] = value
-			}
-			err = vc.Put(path, secret.Data)
-			if err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("[Vault] Unable to add the path: '%s' 😱. Err: %v", path, err)
+	// if exists data, then update
+	if existingData != nil {
+		// if it exists, then update
+		for key, value := range data {
+			existingData[key] = value
 		}
+		if err := vc.Put(path, existingData); err != nil {
+			return err
+		}
+		return nil
 	}
-
-	vc.logger.Infof("[Vault] Added the '%s' ☄️", path)
+	// it doesn't exists, create
+	if err := vc.Put(path, data); err != nil {
+		return err
+	}
 	return nil
 }
