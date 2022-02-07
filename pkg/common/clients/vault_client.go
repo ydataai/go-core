@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/ydataai/go-core/pkg/common/config"
@@ -48,28 +46,6 @@ func NewVaultClient(logger logging.Logger, configuration VaultClientConfiguratio
 	}
 
 	return vc, nil
-}
-
-// renew the token according to secret.Auth.LeaseDuration automatically
-func (vc *VaultClient) renew(authenticator Authenticator) {
-	vc.logger.Info("stating vault token auto renew ...")
-	// schedule the token renew operation
-	for range time.Tick(time.Second * time.Duration(vc.secret.Auth.LeaseDuration-(vc.secret.Auth.LeaseDuration/10))) {
-		// perform renew
-		resp, err := vc.client.Auth().Token().Renew(vc.secret.Auth.ClientToken, vc.secret.Auth.LeaseDuration)
-		if err != nil {
-			vc.logger.Errorf("unable to renew the access token %v 😱", err)
-		}
-		// client update with the renewed token
-		if resp != nil && resp.Auth != nil && resp.Auth.ClientToken != "" {
-			token := strings.TrimSuffix(resp.Auth.ClientToken, "\n")
-			vc.logger.Info("renew: client token renewed successfully 🔑")
-			vc.client.SetToken(token)
-		} else {
-			// new login to deal with system token expiration
-			authenticator.Authenticate(vc)
-		}
-	}
 }
 
 // StoreCredentials receives the path and the respective map of credentials and attempts to store them

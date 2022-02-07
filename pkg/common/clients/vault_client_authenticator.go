@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 // Authenticator is an interface to identify which way to authenticate
@@ -22,6 +23,17 @@ func NewK8sAuthenticator() Authenticator {
 
 // Authenticate is used to authenticate using Kubernetes.
 func (a *K8sAuthenticator) Authenticate(vc *VaultClient) error {
+	if err := a.login(vc); err != nil {
+		return err
+	}
+
+	// do the token renewal cycle
+	go a.renew(vc)
+
+	return nil
+}
+
+func (a *K8sAuthenticator) login(vc *VaultClient) error {
 	vc.logger.Info("performing vault k8s login.")
 	// reads jwt from service account
 	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -47,10 +59,29 @@ func (a *K8sAuthenticator) Authenticate(vc *VaultClient) error {
 	// stores login response secret
 	vc.secret = secret
 
-	// do the token renewal cycle
-	go vc.renew(a)
-
 	return nil
+}
+
+// renew the token according to secret.Auth.LeaseDuration automatically
+func (a *K8sAuthenticator) renew(vc *VaultClient) {
+	vc.logger.Info("stating vault token auto renew ...")
+	// schedule the token renew operation
+	for range time.Tick(time.Second * time.Duration(vc.secret.Auth.LeaseDuration-(vc.secret.Auth.LeaseDuration/10))) {
+		// perform renew
+		resp, err := vc.client.Auth().Token().Renew(vc.secret.Auth.ClientToken, vc.secret.Auth.LeaseDuration)
+		if err != nil {
+			vc.logger.Errorf("unable to renew the access token %v 😱", err)
+		}
+		// client update with the renewed token
+		if resp != nil && resp.Auth != nil && resp.Auth.ClientToken != "" {
+			token := strings.TrimSuffix(resp.Auth.ClientToken, "\n")
+			vc.logger.Info("renew: client token renewed successfully 🔑")
+			vc.client.SetToken(token)
+		} else {
+			// new login to deal with system token expiration
+			a.login(vc)
+		}
+	}
 }
 
 // LocalAuthenticator is used to configure the development mode
