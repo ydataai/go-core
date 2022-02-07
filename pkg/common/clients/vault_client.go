@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -23,8 +22,14 @@ type VaultClient struct {
 }
 
 // NewVaultClient returns an initialized struct with the required dependencies injected
-func NewVaultClient(role string, configuration VaultClientConfiguration, logger logging.Logger) (*VaultClient, error) {
+func NewVaultClient(logger logging.Logger, configuration VaultClientConfiguration, role string,
+	authenticator Authenticator) (*VaultClient, error) {
+
 	config := &api.Config{Address: configuration.VaultURL}
+
+	if authenticator == nil {
+		return nil, errors.New("missing authenticator")
+	}
 
 	client, err := api.NewClient(config)
 	if err != nil {
@@ -38,59 +43,15 @@ func NewVaultClient(role string, configuration VaultClientConfiguration, logger 
 		client:        client,
 	}
 
-	if err = vc.login(); err != nil {
+	if err = authenticator.Authenticate(vc); err != nil {
 		return nil, err
 	}
 
 	return vc, nil
 }
 
-// login the k8s service account
-func (vc *VaultClient) login() error {
-	// Make sure it's development mode
-	if vc.configuration.VaultDevMode {
-		vc.logger.Info("[development mode] performing vault login.")
-		if vc.configuration.VaultToken == "" {
-			return errors.New("unable to get token as env var ('VAULT_TOKEN') 😱")
-		}
-		vc.client.SetToken(vc.configuration.VaultToken)
-		return nil
-	}
-
-	// Production mode
-	vc.logger.Info("performing vault k8s login.")
-	// reads jwt from service account
-	jwt, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
-		return fmt.Errorf("unable to read file containing service account token: %v 😱", err)
-	}
-	params := map[string]interface{}{
-		"jwt":  string(jwt),
-		"role": vc.role, // the name of the role in Vault that was created with this app's Kubernetes service account bound to it
-	}
-	// perform login
-	secret, err := vc.client.Logical().Write("auth/kubernetes/login", params)
-	if err != nil {
-		return fmt.Errorf("unable to log in with Kubernetes auth: %v 😱", err)
-	}
-	if secret == nil || secret.Auth == nil || secret.Auth.ClientToken == "" {
-		return errors.New("login response did not return client token 😱")
-	}
-	// client update with the access token
-	vc.logger.Info("login: client logged in successfully 🔑")
-	token := strings.TrimSuffix(secret.Auth.ClientToken, "\n")
-	vc.client.SetToken(token)
-	// stores login response secret
-	vc.secret = secret
-
-	// do the token renewal cycle
-	go vc.renew()
-
-	return nil
-}
-
 // renew the token according to secret.Auth.LeaseDuration automatically
-func (vc *VaultClient) renew() {
+func (vc *VaultClient) renew(authenticator Authenticator) {
 	vc.logger.Info("stating vault token auto renew ...")
 	// schedule the token renew operation
 	for range time.Tick(time.Second * time.Duration(vc.secret.Auth.LeaseDuration-(vc.secret.Auth.LeaseDuration/10))) {
@@ -106,7 +67,7 @@ func (vc *VaultClient) renew() {
 			vc.client.SetToken(token)
 		} else {
 			// new login to deal with system token expiration
-			vc.login()
+			authenticator.Authenticate(vc)
 		}
 	}
 }
@@ -199,19 +160,19 @@ func (vc *VaultClient) CheckIfEngineExists(path string) bool {
 func (vc *VaultClient) List(path string) (interface{}, error) {
 	vc.logger.Infof("[Vault] Listing the path: '%s' ☄️", path)
 
-	secret, err := vc.client.Logical().List(path)
+	data, err := vc.client.Logical().List(path)
 	if err != nil {
 		vc.logger.Errorf("[Vault] Unable to list the path: '%s' 😱. Err: %v", path, err)
 		return nil, err
 	}
 
-	if secret == nil {
+	if data == nil {
 		vc.logger.Infof("[Vault] ❌ No data found in path: '%s'", path)
 		return nil, nil
 	}
 
 	vc.logger.Infof("[Vault] Listed the path: '%s' ☄️", path)
-	return secret.Data["keys"], nil
+	return data.Data, nil
 }
 
 // Get ...
@@ -293,14 +254,8 @@ func (vc *VaultClient) Patch(path string, data map[string]interface{}) error {
 		for key, value := range data {
 			existingData[key] = value
 		}
-		if err := vc.Put(path, existingData); err != nil {
-			return err
-		}
-		return nil
+		return vc.Put(path, existingData)
 	}
 	// it doesn't exists, create
-	if err := vc.Put(path, data); err != nil {
-		return err
-	}
-	return nil
+	return vc.Put(path, data)
 }
