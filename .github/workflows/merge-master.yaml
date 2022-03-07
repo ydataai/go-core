@@ -21,7 +21,7 @@ jobs:
       release_notes: ${{ steps.semantic.outputs.new_release_notes }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
 
@@ -51,7 +51,7 @@ jobs:
     needs: prepare
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Setup Go
       uses: actions/setup-go@v2
