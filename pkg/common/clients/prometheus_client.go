@@ -60,3 +60,19 @@ func (c PrometheusClient) QueryRange(ctx context.Context, query string, startAt,
 	}
 	return result, nil
 }
+
+// Query returns an instant vector, given the following parameters:
+//    - query: Prometheus query
+//    - moment: moment in time
+// It returns the result vector and the execution error encountered.
+func (c PrometheusClient) Query(ctx context.Context, query string, moment time.Time) (model.Value, error) {
+	result, warnings, err := c.api.Query(ctx, query, moment)
+	if err != nil {
+		c.logger.Errorf("Error querying Prometheus: %v", err)
+		return nil, err
+	}
+	if len(warnings) > 0 {
+		c.logger.Warnf("Prometheus query warnings result: %v", warnings)
+	}
+	return result, nil
+}
