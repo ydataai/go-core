@@ -7,6 +7,7 @@ import (
 
 // UsageEventReq represents an usage event for metering purpose
 type UsageEventReq struct {
+	PlanID      string    `json:"planId"`
 	DimensionID string    `json:"dimensionId"`
 	Quantity    float32   `json:"quantity"`
 	StartAt     time.Time `json:"startAt"`
@@ -14,6 +15,7 @@ type UsageEventReq struct {
 
 // UsageEventRes represents an usage event response
 type UsageEventRes struct {
+	PlanID       string `json:"planId"`
 	UsageEventID string `json:"usageEventId"`
 	DimensionID  string `json:"dimensionId"`
 	Status       string `json:"status"`
