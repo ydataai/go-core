@@ -19,7 +19,7 @@ type StorageClientInterface interface {
 	CreateDirectory(relativePath string) error
 	RemoveDirectory(relativePath string) error
 	CheckIfExists(relativePath string) bool
-	Rename(fromRelativePath, toAbsolutePath string) bool
+	Rename(fromRelativePath, toAbsolutePath string) error
 }
 
 // NewStorageClient returns an initialized struct with the required dependencies injected
@@ -61,14 +61,14 @@ func (sc *StorageClient) RemoveDirectory(relativePath string) error {
 }
 
 // CheckIfExists attempts to check if the directory exists
-func (sc *StorageClient) CheckIfExists(relativePath string) bool {
+func (sc *StorageClient) CheckIfExists(relativePath string) error {
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
 	if _, err := os.Stat(fullPath); err != nil && os.IsNotExist(err) {
 		sc.logger.Errorf("while check path %s", relativePath)
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // Rename attempts to rename a path
