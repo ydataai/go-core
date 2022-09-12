@@ -37,12 +37,11 @@ func (sc *StorageClient) BasePath() string {
 
 // CreateDirectory attempts to create a directory to hold requirements.txt
 func (sc *StorageClient) CreateDirectory(relativePath string) error {
+	sc.logger.Infof("attempting to create directory %s", relativePath)
+
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
-
-	sc.logger.Infof("attempting to create directory %s", fullPath)
-
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		sc.logger.Errorf("while create path %s", relativePath)
+		sc.logger.Errorf("while create path %s. Error:", relativePath, err)
 		return os.MkdirAll(fullPath, os.ModePerm)
 	}
 
@@ -54,7 +53,7 @@ func (sc *StorageClient) RemoveDirectory(relativePath string) error {
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
 	sc.logger.Infof("attempting to remove %s", fullPath)
 	if err := os.RemoveAll(fullPath); err != nil {
-		sc.logger.Errorf("while remove path %s", relativePath)
+		sc.logger.Errorf("while remove path %s. Error:", relativePath, err)
 		return err
 	}
 	return nil
@@ -64,7 +63,7 @@ func (sc *StorageClient) RemoveDirectory(relativePath string) error {
 func (sc *StorageClient) CheckIfExists(relativePath string) bool {
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
 	if _, err := os.Stat(fullPath); err != nil && os.IsNotExist(err) {
-		sc.logger.Errorf("while check path %s", relativePath)
+		sc.logger.Errorf("while check path %s. Error:", relativePath, err)
 		return false
 	}
 
@@ -75,7 +74,7 @@ func (sc *StorageClient) CheckIfExists(relativePath string) bool {
 func (sc *StorageClient) Rename(fromRelativePath, toAbsolutePath string) error {
 	sc.logger.Infof("attempting to rename from %s to %s", fromRelativePath, toAbsolutePath)
 	if err := os.Rename(fromRelativePath, toAbsolutePath); err != nil {
-		sc.logger.Errorf("while rename path from %s to %s", fromRelativePath, toAbsolutePath)
+		sc.logger.Errorf("while rename path from %s to %s. Error:", fromRelativePath, toAbsolutePath, err)
 		return err
 	}
 
