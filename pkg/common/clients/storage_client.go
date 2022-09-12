@@ -61,23 +61,23 @@ func (sc *StorageClient) RemoveDirectory(relativePath string) error {
 }
 
 // CheckIfExists attempts to check if the directory exists
-func (sc *StorageClient) CheckIfExists(relativePath string) error {
+func (sc *StorageClient) CheckIfExists(relativePath string) bool {
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
 	if _, err := os.Stat(fullPath); err != nil && os.IsNotExist(err) {
 		sc.logger.Errorf("while check path %s", relativePath)
-		return err
-	}
-
-	return nil
-}
-
-// Rename attempts to rename a path
-func (sc *StorageClient) Rename(fromRelativePath, toAbsolutePath string) bool {
-	sc.logger.Infof("attempting to rename from %s to %s", fromRelativePath, toAbsolutePath)
-	if err := os.Rename(fromRelativePath, toAbsolutePath); err != nil {
-		sc.logger.Errorf("while rename path from %s to %s", fromRelativePath, toAbsolutePath)
 		return false
 	}
 
 	return true
+}
+
+// Rename attempts to rename a path
+func (sc *StorageClient) Rename(fromRelativePath, toAbsolutePath string) error {
+	sc.logger.Infof("attempting to rename from %s to %s", fromRelativePath, toAbsolutePath)
+	if err := os.Rename(fromRelativePath, toAbsolutePath); err != nil {
+		sc.logger.Errorf("while rename path from %s to %s", fromRelativePath, toAbsolutePath)
+		return err
+	}
+
+	return nil
 }
