@@ -12,6 +12,7 @@ type ManagerConfiguration struct {
 	MetricsServerPort    int    `envconfig:"METRICS_SERVER_PORT" default:"8080"`
 	HealthProbeAddress   string `envconfig:"HEALTH_PROBE_ADDRESS" default:":8081"`
 	EnableWebhooks       bool   `envconfig:"ENABLE_WEBHOOKS" default:"true"`
+	WebhookCertDir       string `envconfig:"WEBHOOK_CERT_DIR" default:"/tmp/k8s-webhook-server/serving-certs"`
 }
 
 // LoadFromEnvVars from the Manager
