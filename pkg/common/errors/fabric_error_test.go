@@ -31,7 +31,7 @@ func TestUnknownErrorDuringTraining(t *testing.T) {
 	assert.Equal(t, str, ferr.Error())
 
 	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1}\n"
-	actual, err := ferr.(UnknownErrorDuringTraining).ToJSON()
+	actual, err := ferr.(*UnknownErrorDuringTraining).ToJSON()
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
