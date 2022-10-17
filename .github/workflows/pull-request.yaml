@@ -32,3 +32,6 @@ jobs:
 
     - name: Run vet
       run: make vet
+
+    - name: Run build
+      run: make build
