@@ -9,6 +9,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// Context is a key/value map to carrier any additional information.
 type Context map[string]string
 
 // FabricError represents a shared error model.
