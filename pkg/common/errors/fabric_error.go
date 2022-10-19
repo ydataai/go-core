@@ -14,20 +14,20 @@ type Context map[string]string
 
 // FabricError represents a shared error model.
 type FabricError struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	HTTPCode    int     `json:"httpCode,omitempty"`
-	ReturnValue int     `json:"returnValue"`
-	Context     Context `json:"context,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	HTTPCode    int      `json:"httpCode"`
+	ReturnValue int      `json:"returnValue"`
+	Context     *Context `json:"context,omitempty"`
 }
 
 // New Creates a new BaseError with the required fields.
-func New(returnValue int, name, description string) FabricError {
+func New(returnValue, httpCode int, name, description string) FabricError {
 	return FabricError{
 		ReturnValue: returnValue,
 		Name:        name,
 		Description: description,
-		Context:     Context{},
+		HTTPCode:    httpCode,
 	}
 }
 
@@ -42,7 +42,6 @@ func NewFromJSON(text string) *FabricError {
 			Description: err.Error(),
 			ReturnValue: -1,
 			HTTPCode:    500,
-			Context:     Context{},
 		}
 	}
 	return &ferr
@@ -68,8 +67,9 @@ func NewFromJSON(text string) *FabricError {
 // Returns a FabricError or nil if the container is not found.
 func NewFromPod(pod corev1.Pod, containerName string) *FabricError {
 	for _, status := range pod.Status.ContainerStatuses {
-		if status.Name == containerName && status.LastTerminationState.Terminated != nil {
-			return NewFromJSON(status.LastTerminationState.Terminated.Message)
+		terminated := status.State.Terminated
+		if status.Name == containerName && terminated != nil {
+			return NewFromJSON(terminated.Message)
 		}
 	}
 	return nil
