@@ -14,11 +14,11 @@ type Context map[string]string
 
 // FabricError represents a shared error model.
 type FabricError struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	HTTPCode    int      `json:"httpCode"`
-	ReturnValue int      `json:"returnValue"`
-	Context     *Context `json:"context,omitempty"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	HTTPCode    int     `json:"httpCode"`
+	ReturnValue int     `json:"returnValue"`
+	Context     Context `json:"context,omitempty"`
 }
 
 // New Creates a new BaseError with the required fields.
