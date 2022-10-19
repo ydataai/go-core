@@ -21,7 +21,7 @@ func NewUnknownErrorDuringTraining() error {
 			Description: "Some unknown and specific error during Synth training either training",
 			HTTPCode:    500,
 			ReturnValue: -1,
-			Context: Context{
+			Context: &Context{
 				"key1": "value1",
 				"key2": "value2",
 			},
@@ -51,7 +51,7 @@ func TestFabricErrorWithContextToJSON(t *testing.T) {
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
 		ReturnValue: -1,
-		Context: Context{
+		Context: &Context{
 			"key1": "value1",
 			"key2": "value2",
 		},
@@ -63,9 +63,9 @@ func TestFabricErrorWithContextToJSON(t *testing.T) {
 }
 
 func TestFabricErrorToJSON(t *testing.T) {
-	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"returnValue\":-1}\n"
+	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1}\n"
 
-	ferr := New(-1, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
+	ferr := New(-1, 500, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
 	actual, err := ferr.ToJSON()
 
 	assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestNewFromTerminatedPod(t *testing.T) {
 			ContainerStatuses: []corev1.ContainerStatus{
 				{
 					Name: "sidecar",
-					LastTerminationState: corev1.ContainerState{
+					State: corev1.ContainerState{
 						Terminated: &corev1.ContainerStateTerminated{
 							ExitCode: -1,
 							Message:  "Some message",
@@ -101,7 +101,7 @@ func TestNewFromTerminatedPod(t *testing.T) {
 				},
 				{
 					Name: "main",
-					LastTerminationState: corev1.ContainerState{
+					State: corev1.ContainerState{
 						Terminated: &corev1.ContainerStateTerminated{
 							ExitCode: -1,
 							Message:  "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1}",
@@ -130,7 +130,7 @@ func TestNewFromRunningPod(t *testing.T) {
 			ContainerStatuses: []corev1.ContainerStatus{
 				{
 					Name: "sidecar",
-					LastTerminationState: corev1.ContainerState{
+					State: corev1.ContainerState{
 						Running: &corev1.ContainerStateRunning{
 							StartedAt: v1.Now(),
 						},
@@ -138,7 +138,7 @@ func TestNewFromRunningPod(t *testing.T) {
 				},
 				{
 					Name: "main",
-					LastTerminationState: corev1.ContainerState{
+					State: corev1.ContainerState{
 						Running: &corev1.ContainerStateRunning{
 							StartedAt: v1.Now(),
 						},
@@ -154,13 +154,13 @@ func TestNewFromRunningPod(t *testing.T) {
 }
 
 func TestErrorString(t *testing.T) {
-	err := New(-1, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
+	err := New(-1, 500, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
 	str := "UnknownErrorDuringTraining (-1) Some unknown and specific error during Synth training either training"
 	assert.Equal(t, str, err.String())
 }
 
 func TestErrorError(t *testing.T) {
-	err := New(-1, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
+	err := New(-1, 500, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
 	str := "UnknownErrorDuringTraining (-1) Some unknown and specific error during Synth training either training"
 	assert.Equal(t, str, err.Error())
 }
