@@ -72,7 +72,12 @@ func NewFromPod(pod corev1.Pod, containerName string) *FabricError {
 			return NewFromJSON(terminated.Message)
 		}
 	}
-	return nil
+	return &FabricError{
+		Name:        "UnexpectedError",
+		Description: fmt.Sprintf("Container %s with Terminated state not found", containerName),
+		ReturnValue: -404,
+		HTTPCode:    404,
+	}
 }
 
 // Error interface implementation.
