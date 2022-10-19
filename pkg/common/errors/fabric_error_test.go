@@ -149,8 +149,14 @@ func TestNewFromRunningPod(t *testing.T) {
 	}
 
 	ferr := NewFromPod(pod, "main")
+	expected := &FabricError{
+		Name:        "NotFoundError",
+		Description: "Container main with Terminated state not found",
+		ReturnValue: -404,
+		HTTPCode:    404,
+	}
 
-	assert.Nil(t, ferr)
+	assert.EqualValues(t, expected, ferr)
 }
 
 func TestErrorString(t *testing.T) {
