@@ -21,7 +21,7 @@ func NewUnknownErrorDuringTraining() error {
 			Description: "Some unknown and specific error during Synth training either training",
 			HTTPCode:    500,
 			ReturnValue: -1,
-			Context: &Context{
+			Context: Context{
 				"key1": "value1",
 				"key2": "value2",
 			},
@@ -51,7 +51,7 @@ func TestFabricErrorWithContextToJSON(t *testing.T) {
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
 		ReturnValue: -1,
-		Context: &Context{
+		Context: Context{
 			"key1": "value1",
 			"key2": "value2",
 		},
@@ -81,6 +81,20 @@ func TestNewFromJSON(t *testing.T) {
 	}
 
 	json := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1}\n"
+	actual := NewFromJSON(json)
+
+	assert.EqualValues(t, expected, actual)
+}
+
+func TestNewFromJSONWithContextNull(t *testing.T) {
+	expected := &FabricError{
+		Name:        "UnknownErrorDuringTraining",
+		Description: "Some unknown and specific error during Synth training either training",
+		HTTPCode:    500,
+		ReturnValue: -1,
+	}
+
+	json := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1,\"context\":null}\n"
 	actual := NewFromJSON(json)
 
 	assert.EqualValues(t, expected, actual)
