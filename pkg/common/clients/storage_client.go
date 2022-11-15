@@ -35,17 +35,23 @@ func (sc *StorageClient) BasePath() string {
 	return sc.configuration.BasePath
 }
 
-// CreateDirectory attempts to create a directory to hold requirements.txt
+// CreateDirectory creates a new directory in the give path
+// fails if the the path exists and is not a folder or other reason os related
 func (sc *StorageClient) CreateDirectory(relativePath string) error {
 	sc.logger.Infof("attempting to create directory %s", relativePath)
 
 	fullPath := fmt.Sprintf("%s/%s", sc.configuration.BasePath, relativePath)
-	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		sc.logger.Errorf("while create path %s. Error:", relativePath, err)
+	pathInfo, err := os.Stat(fullPath)
+
+	if os.IsNotExist(err) {
 		return os.MkdirAll(fullPath, os.ModePerm)
 	}
 
-	return nil
+	if os.IsExist(err) && pathInfo.IsDir() {
+		return nil
+	}
+
+	return err
 }
 
 // RemoveDirectory attempts to remove the directory that holds requirements.txt
