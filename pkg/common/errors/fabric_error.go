@@ -9,11 +9,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// FabricError represents a shared error model.
+type FabricError interface {
+	error
+	GetName() string
+	GetDescription() string
+	GetHTTPCode() int
+	GetReturnValue() int
+	GetContext() Context
+	ToJSON() (string, error)
+	String() string
+}
+
 // Context is a key/value map to carrier any additional information.
 type Context map[string]string
 
-// FabricError represents a shared error model.
-type FabricError struct {
+type fabricError struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	HTTPCode    int     `json:"httpCode"`
@@ -21,9 +32,53 @@ type FabricError struct {
 	Context     Context `json:"context,omitempty"`
 }
 
+// GetName returns the error name.
+func (e fabricError) GetName() string {
+	return e.Name
+}
+
+// GetDescription returns the error description.
+func (e fabricError) GetDescription() string {
+	return e.Description
+}
+
+// GetHTTPCode returns the HTTP status code of error.
+func (e fabricError) GetHTTPCode() int {
+	return e.HTTPCode
+}
+
+// GetReturnValue returns the exit code of error.
+func (e fabricError) GetReturnValue() int {
+	return e.ReturnValue
+}
+
+// GetContext returns the context of error.
+func (e fabricError) GetContext() Context {
+	return e.Context
+}
+
+// Error interface implementation.
+func (e fabricError) Error() string {
+	return e.String()
+}
+
+// String returns an string representation of BaseError.
+func (e fabricError) String() string {
+	return fmt.Sprintf("%s (%d) %s", e.Name, e.ReturnValue, e.Description)
+}
+
+// ToJSON encode FabircError to JSON string.
+func (e fabricError) ToJSON() (string, error) {
+	buf := bytes.NewBuffer([]byte{})
+	if err := json.NewEncoder(buf).Encode(e); err != nil {
+		return "<nil>", err
+	}
+	return buf.String(), nil
+}
+
 // New Creates a new BaseError with the required fields.
 func New(returnValue, httpCode int, name, description string) FabricError {
-	return FabricError{
+	return &fabricError{
 		ReturnValue: returnValue,
 		Name:        name,
 		Description: description,
@@ -33,11 +88,11 @@ func New(returnValue, httpCode int, name, description string) FabricError {
 
 // NewFromJSON creates a Frabric error based on
 // JSON string error representation.
-func NewFromJSON(text string) *FabricError {
+func NewFromJSON(text string) FabricError {
 	buf := bytes.NewBufferString(text)
-	ferr := FabricError{}
+	ferr := fabricError{}
 	if err := json.NewDecoder(buf).Decode(&ferr); err != nil {
-		return &FabricError{
+		return &fabricError{
 			Name:        "UnexpectedError",
 			Description: err.Error(),
 			ReturnValue: -1,
@@ -65,36 +120,17 @@ func NewFromJSON(text string) *FabricError {
 //	}
 //
 // Returns a FabricError or nil if the container is not found.
-func NewFromPod(pod corev1.Pod, containerName string) *FabricError {
+func NewFromPod(pod corev1.Pod, containerName string) FabricError {
 	for _, status := range pod.Status.ContainerStatuses {
 		terminated := status.State.Terminated
 		if status.Name == containerName && terminated != nil {
 			return NewFromJSON(terminated.Message)
 		}
 	}
-	return &FabricError{
+	return &fabricError{
 		Name:        "NotFoundError",
 		Description: fmt.Sprintf("Container %s with Terminated state not found", containerName),
 		ReturnValue: -404,
 		HTTPCode:    404,
 	}
-}
-
-// Error interface implementation.
-func (e *FabricError) Error() string {
-	return e.String()
-}
-
-// String returns an string representation of BaseError.
-func (e *FabricError) String() string {
-	return fmt.Sprintf("%s (%d) %s", e.Name, e.ReturnValue, e.Description)
-}
-
-// ToJSON encode FabircError to JSON string.
-func (e *FabricError) ToJSON() (string, error) {
-	buf := bytes.NewBuffer([]byte{})
-	if err := json.NewEncoder(buf).Encode(e); err != nil {
-		return "<nil>", err
-	}
-	return buf.String(), nil
 }

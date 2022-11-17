@@ -11,12 +11,12 @@ import (
 // Custom error for testing purpose.
 
 type UnknownErrorDuringTraining struct {
-	*FabricError
+	FabricError
 }
 
-func NewUnknownErrorDuringTraining() error {
+func NewUnknownErrorDuringTraining() FabricError {
 	return &UnknownErrorDuringTraining{
-		&FabricError{
+		&fabricError{
 			Name:        "UnknownErrorDuringTraining",
 			Description: "Some unknown and specific error during Synth training either training",
 			HTTPCode:    500,
@@ -37,7 +37,7 @@ func TestUnknownErrorDuringTraining(t *testing.T) {
 	assert.Equal(t, str, ferr.Error())
 
 	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1,\"context\":{\"key1\":\"value1\",\"key2\":\"value2\"}}\n"
-	actual, err := ferr.(*UnknownErrorDuringTraining).ToJSON()
+	actual, err := ferr.ToJSON()
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -46,7 +46,7 @@ func TestUnknownErrorDuringTraining(t *testing.T) {
 func TestFabricErrorWithContextToJSON(t *testing.T) {
 	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1,\"context\":{\"key1\":\"value1\",\"key2\":\"value2\"}}\n"
 
-	ferr := FabricError{
+	ferr := fabricError{
 		Name:        "UnknownErrorDuringTraining",
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
@@ -73,7 +73,7 @@ func TestFabricErrorToJSON(t *testing.T) {
 }
 
 func TestNewFromJSON(t *testing.T) {
-	expected := &FabricError{
+	var expected FabricError = &fabricError{
 		Name:        "UnknownErrorDuringTraining",
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
@@ -87,7 +87,7 @@ func TestNewFromJSON(t *testing.T) {
 }
 
 func TestNewFromJSONWithContextNull(t *testing.T) {
-	expected := &FabricError{
+	var expected FabricError = &fabricError{
 		Name:        "UnknownErrorDuringTraining",
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
@@ -126,7 +126,7 @@ func TestNewFromTerminatedPod(t *testing.T) {
 		},
 	}
 
-	expected := &FabricError{
+	expected := &fabricError{
 		Name:        "UnknownErrorDuringTraining",
 		Description: "Some unknown and specific error during Synth training either training",
 		HTTPCode:    500,
@@ -163,7 +163,7 @@ func TestNewFromRunningPod(t *testing.T) {
 	}
 
 	ferr := NewFromPod(pod, "main")
-	expected := &FabricError{
+	expected := &fabricError{
 		Name:        "NotFoundError",
 		Description: "Container main with Terminated state not found",
 		ReturnValue: -404,
