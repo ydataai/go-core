@@ -16,7 +16,7 @@ type UnknownErrorDuringTraining struct {
 
 func NewUnknownErrorDuringTraining() FabricError {
 	return &UnknownErrorDuringTraining{
-		&fabricError{
+		fabricError{
 			Name:        "UnknownErrorDuringTraining",
 			Description: "Some unknown and specific error during Synth training either training",
 			HTTPCode:    500,
@@ -30,18 +30,6 @@ func NewUnknownErrorDuringTraining() FabricError {
 }
 
 // Test functions
-
-func TestUnknownErrorDuringTraining(t *testing.T) {
-	ferr := NewUnknownErrorDuringTraining()
-	str := "UnknownErrorDuringTraining (-1) Some unknown and specific error during Synth training either training"
-	assert.Equal(t, str, ferr.Error())
-
-	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1,\"context\":{\"key1\":\"value1\",\"key2\":\"value2\"}}\n"
-	actual, err := ferr.ToJSON()
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
-}
 
 func TestFabricErrorWithContextToJSON(t *testing.T) {
 	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1,\"context\":{\"key1\":\"value1\",\"key2\":\"value2\"}}\n"
@@ -66,7 +54,7 @@ func TestFabricErrorToJSON(t *testing.T) {
 	expected := "{\"name\":\"UnknownErrorDuringTraining\",\"description\":\"Some unknown and specific error during Synth training either training\",\"httpCode\":500,\"returnValue\":-1}\n"
 
 	ferr := New(-1, 500, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
-	actual, err := ferr.ToJSON()
+	actual, err := ferr.(*fabricError).ToJSON()
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -176,7 +164,7 @@ func TestNewFromRunningPod(t *testing.T) {
 func TestErrorString(t *testing.T) {
 	err := New(-1, 500, "UnknownErrorDuringTraining", "Some unknown and specific error during Synth training either training")
 	str := "UnknownErrorDuringTraining (-1) Some unknown and specific error during Synth training either training"
-	assert.Equal(t, str, err.String())
+	assert.Equal(t, str, err.(*fabricError).String())
 }
 
 func TestErrorError(t *testing.T) {

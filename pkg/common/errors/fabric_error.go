@@ -17,8 +17,6 @@ type FabricError interface {
 	GetHTTPCode() int
 	GetReturnValue() int
 	GetContext() Context
-	ToJSON() (string, error)
-	String() string
 }
 
 // Context is a key/value map to carrier any additional information.
