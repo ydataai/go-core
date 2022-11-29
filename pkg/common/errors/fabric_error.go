@@ -98,3 +98,23 @@ func (e *FabricError) ToJSON() (string, error) {
 	}
 	return buf.String(), nil
 }
+
+// InternalServerError represents a 500 FabricError that happened in the system
+func InternalError(description string) FabricError {
+	return FabricError{
+		Name:        "InternalError",
+		Description: description,
+		HTTPCode:    500,
+		ReturnValue: -1,
+	}
+}
+
+// NotFoundError represents a 404 error with a custom description
+func NotFoundError(description string) FabricError {
+	return FabricError{
+		Name:        "NotFoundError",
+		Description: description,
+		HTTPCode:    404,
+		ReturnValue: -2,
+	}
+}
