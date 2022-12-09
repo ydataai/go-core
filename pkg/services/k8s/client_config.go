@@ -7,19 +7,20 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// K8sRestClientConfiguration defines required variables to configure the environment
-type K8sRestClientConfiguration struct {
-	K8S_CLIENT_QPS   float32 `envconfig:"K8S_REST_CLIENT_QPS" default:"100"`
-	K8S_CLIENT_BURST int     `envconfig:"K8S_REST_CLIENT_BURST" default:"500"`
+// RestClientConfiguration defines required variables to configure the environment
+type RestClientConfiguration struct {
+	ClientQPS   float32 `envconfig:"K8S_REST_CLIENT_QPS" default:"100"`
+	ClientBurst int     `envconfig:"K8S_REST_CLIENT_BURST" default:"500"`
 }
 
-// LoadFromEnvVars for K8sRestClientConfiguration
-func (c *K8sRestClientConfiguration) LoadFromEnvVars() error {
+// LoadFromEnvVars for RestClientConfiguration.
+func (c *RestClientConfiguration) LoadFromEnvVars() error {
 	return envconfig.Process("", c)
 }
 
-func Config(config K8sRestClientConfiguration) *rest.Config {
+// Config creates rest client configuration with TokenBucketRateLimiter.
+func Config(config RestClientConfiguration) *rest.Config {
 	kconfig := ctrl.GetConfigOrDie()
-	kconfig.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(config.K8S_CLIENT_QPS, config.K8S_CLIENT_BURST)
+	kconfig.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(config.ClientQPS, config.ClientBurst)
 	return kconfig
 }
