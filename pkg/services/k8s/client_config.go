@@ -1,4 +1,4 @@
-// "Package k8s is an util library to deal with kubernetes.
+// Package k8s is an util library to deal with kubernetes.
 package k8s
 
 import (
