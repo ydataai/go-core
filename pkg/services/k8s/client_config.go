@@ -1,3 +1,4 @@
+// K8s is util package to deal with kubernetes.
 package k8s
 
 import (
