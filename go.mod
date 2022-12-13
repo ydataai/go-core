@@ -1,6 +1,6 @@
 module github.com/ydataai/go-core
 
-go 1.18
+go 1.19
 
 require (
 	github.com/gin-gonic/gin v1.7.7
