@@ -87,8 +87,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         VERSION: ${{ needs.prepare.outputs.release }}
       with:
-        tag_name: v${{ env.VERSION }}.${{ env.BUILD }}
-        release_name: ${{ env.VERSION }}.${{ env.BUILD }}
+        tag_name: v${{ env.VERSION }}-${{ env.BUILD }}
+        release_name: ${{ env.VERSION }}-${{ env.BUILD }}
         body: ${{ github.event.head_commit.message }}
         prerelease: true
 
