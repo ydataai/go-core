@@ -35,11 +35,11 @@ jobs:
 
     - name: Git Short sha
       id: short_sha
-      run: echo "::set-output name=value::$(git rev-parse --short HEAD)"
+      run: echo "value=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Remove prefix 'v' from version
       id: version
-      run: echo "::set-output name=value::`echo ${{ steps.semantic.outputs.new_release_version }} | sed -r 's|v()|\1|'`"
+      run: echo "value=`echo ${{ steps.semantic.outputs.new_release_version }} | sed -r 's|v()|\1|'`" >> $GITHUB_OUTPUT
 
 
   build:
@@ -74,9 +74,7 @@ jobs:
     if: needs.prepare.outputs.new_release == 'true'
 
     name: Dev and Draft Releases
-    runs-on:
-    - self-hosted
-    - micro
+    runs-on: ubuntu-20.04
 
     needs:
     - prepare
@@ -90,8 +88,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
         VERSION: ${{ needs.prepare.outputs.release }}
       with:
-        tag_name: ${{ env.VERSION }}.${{ env.BUILD }}
-        release_name: ${{ env.VERSION }}.${{ env.BUILD }}
+        tag_name: v${{ env.VERSION }}-${{ env.BUILD }}
+        release_name: ${{ env.VERSION }}-${{ env.BUILD }}
         body: ${{ github.event.head_commit.message }}
         prerelease: true
 
@@ -105,7 +103,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
       with:
-        tag_name: ${{ needs.prepare.outputs.release }}
+        tag_name: v${{ needs.prepare.outputs.release }}
         release_name: ${{ needs.prepare.outputs.release }}
         body: ${{ needs.prepare.outputs.release_notes }}
         draft: true
