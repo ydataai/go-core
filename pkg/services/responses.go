@@ -1,3 +1,4 @@
+// Package service contains methods used by internal components
 package services
 
 import (
@@ -5,11 +6,13 @@ import (
 	"github.com/ydataai/go-core/pkg/common/errors"
 )
 
+// ServiceResponse is a struct for all the responses made by the services
 type ServiceResponse struct {
 	Status int
 	Data   interface{}
 }
 
+// ContinueResponse helper method to build a continue type ServiceResponse
 func ContinueResponse(data interface{}) ServiceResponse {
 	return ServiceResponse{
 		Status: 100,
@@ -17,6 +20,7 @@ func ContinueResponse(data interface{}) ServiceResponse {
 	}
 }
 
+// SuccessResponse helper method to build a success type ServiceResponse
 func SuccessResponse(data interface{}) ServiceResponse {
 	return ServiceResponse{
 		Status: 200,
@@ -24,6 +28,7 @@ func SuccessResponse(data interface{}) ServiceResponse {
 	}
 }
 
+// ErrorResponse helper method to build an error type ServiceResponse
 func ErrorResponse(err errors.FabricError) ServiceResponse {
 	return ServiceResponse{
 		Status: err.HTTPCode,
@@ -31,6 +36,7 @@ func ErrorResponse(err errors.FabricError) ServiceResponse {
 	}
 }
 
+// WriteTo implements the gin interface to write a ServiceResponse into an gin request/response
 func (s ServiceResponse) WriteTo(ctx *gin.Context) {
 	if s.Data != nil {
 		ctx.JSON(s.Status, s.Data)
