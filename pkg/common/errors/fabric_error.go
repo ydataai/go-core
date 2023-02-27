@@ -109,7 +109,7 @@ func BadRequestError(description string) FabricError {
 	}
 }
 
-w// DecodeError represents a model decoding error
+// DecodeError represents a model decoding error
 func DecodeError(description string) FabricError {
 	return FabricError{
 		Name:        "DecodingError",
