@@ -99,7 +99,7 @@ func (e *FabricError) ToJSON() (string, error) {
 	return buf.String(), nil
 }
 
-// DecodeError represents an model decoding error
+// BadRequestError represents a model for a bad request with a custom description
 func BadRequestError(description string) FabricError {
 	return FabricError{
 		Name:        "BadRequest",
@@ -109,7 +109,7 @@ func BadRequestError(description string) FabricError {
 	}
 }
 
-// DecodeError represents an model decoding error
+w// DecodeError represents a model decoding error
 func DecodeError(description string) FabricError {
 	return FabricError{
 		Name:        "DecodingError",
