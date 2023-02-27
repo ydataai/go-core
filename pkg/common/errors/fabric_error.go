@@ -100,6 +100,16 @@ func (e *FabricError) ToJSON() (string, error) {
 }
 
 // DecodeError represents an model decoding error
+func BadRequestError(description string) FabricError {
+	return FabricError{
+		Name:        "BadRequest",
+		Description: description,
+		HTTPCode:    400,
+		ReturnValue: -2,
+	}
+}
+
+// DecodeError represents an model decoding error
 func DecodeError(description string) FabricError {
 	return FabricError{
 		Name:        "DecodingError",
