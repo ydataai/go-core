@@ -99,6 +99,16 @@ func (e *FabricError) ToJSON() (string, error) {
 	return buf.String(), nil
 }
 
+// DecodeError represents an model decoding error
+func DecodeError(description string) FabricError {
+	return FabricError{
+		Name:        "DecodingError",
+		Description: description,
+		HTTPCode:    400,
+		ReturnValue: -2,
+	}
+}
+
 // InternalServerError represents a 500 FabricError that happened in the system
 func InternalError(description string) FabricError {
 	return FabricError{
