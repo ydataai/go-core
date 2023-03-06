@@ -13,9 +13,9 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	google.golang.org/grpc v1.53.0
-	k8s.io/api v0.26.1
-	k8s.io/apimachinery v0.26.1
-	k8s.io/client-go v0.26.1
+	k8s.io/api v0.26.2
+	k8s.io/apimachinery v0.26.2
+	k8s.io/client-go v0.26.2
 	k8s.io/utils v0.0.0-20230115233650-391b47cb4029
 	sigs.k8s.io/controller-runtime v0.14.5
 )
