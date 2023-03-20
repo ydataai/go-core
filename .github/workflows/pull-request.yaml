@@ -15,7 +15,9 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-20.04
+    runs-on:
+    - self-hosted
+    - medium
 
     steps:
     - uses: actions/checkout@v3

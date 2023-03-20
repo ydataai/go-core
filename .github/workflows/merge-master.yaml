@@ -12,7 +12,9 @@ on:
 jobs:
   prepare:
     name: Calculate Version and build number
-    runs-on: ubuntu-20.04
+    runs-on:
+    - self-hosted
+    - micro
 
     outputs:
       build_number: ${{ steps.short_sha.outputs.value }}
@@ -46,7 +48,9 @@ jobs:
     if: needs.prepare.outputs.new_release == 'true'
 
     name: Build
-    runs-on: ubuntu-20.04
+    runs-on:
+    - self-hosted
+    - micro
 
     needs: prepare
 
@@ -74,7 +78,9 @@ jobs:
     if: needs.prepare.outputs.new_release == 'true'
 
     name: Dev and Draft Releases
-    runs-on: ubuntu-20.04
+    runs-on:
+    - self-hosted
+    - micro
 
     needs:
     - prepare
