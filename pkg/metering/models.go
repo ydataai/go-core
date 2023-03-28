@@ -1,4 +1,5 @@
-package marketplace
+// Package metering provides models to interact with the adapter server
+package metering
 
 import "time"
 
