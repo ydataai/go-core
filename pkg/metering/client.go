@@ -9,16 +9,16 @@ import (
 	coreHTTP "github.com/ydataai/go-core/pkg/http"
 )
 
-// MeteringClient represents the metering operations and it's responsible to handle
+// Client represents the metering operations and it's responsible to handle
 // each specific cloud provider business rules, data conversions and validations.
-type MeteringClient interface {
+type Client interface {
 	// CreateUsageEvent creates a single usage event at the cloud provider metering service.
 	CreateUsageEvent(ctx context.Context, req UsageEvent) (UsageEventResponse, error)
 	// CreateUsageEventBatch creates a event batch  at the cloud provider metering service.
 	CreateUsageEventBatch(ctx context.Context, req UsageEventBatch) (UsageEventBatchResponse, error)
 }
 
-type MeteringClientOptions struct {
+type ClientOptions struct {
 	BaseURL string
 }
 
@@ -30,12 +30,12 @@ const (
 	batchUsageEvent = "batchUsageEvent"
 )
 
-type meteringClient struct {
+type client struct {
 	pl      coreHTTP.Pipeline
-	options MeteringClientOptions
+	options ClientOptions
 }
 
-func NewMeteringClient(options *MeteringClientOptions) MeteringClient {
+func NewMeteringClient(options *ClientOptions) Client {
 	if options == nil {
 		defaultOptions := defaultOptions()
 		options = &defaultOptions
@@ -44,18 +44,18 @@ func NewMeteringClient(options *MeteringClientOptions) MeteringClient {
 	// Work in progress
 	pl := coreHTTP.NewPipeline()
 
-	return meteringClient{
+	return client{
 		pl:      pl,
 		options: *options,
 	}
 }
 
-func (c meteringClient) CreateUsageEvent(ctx context.Context, req UsageEvent) (UsageEventResponse, error) {
+func (c client) CreateUsageEvent(ctx context.Context, req UsageEvent) (UsageEventResponse, error) {
 	result, err := sendRequest[UsageEvent, UsageEventResponse](ctx, c.pl, c.options.BaseURL, usageEvent, req)
 	return *result, err
 }
 
-func (c meteringClient) CreateUsageEventBatch(
+func (c client) CreateUsageEventBatch(
 	ctx context.Context, req UsageEventBatch,
 ) (UsageEventBatchResponse, error) {
 	result, err := sendRequest[UsageEventBatch, UsageEventBatchResponse](
@@ -93,8 +93,8 @@ func sendRequest[T, V any](
 	return result, nil
 }
 
-func defaultOptions() MeteringClientOptions {
-	return MeteringClientOptions{
+func defaultOptions() ClientOptions {
+	return ClientOptions{
 		BaseURL: defaultBaseURL,
 	}
 }
