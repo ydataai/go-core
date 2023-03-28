@@ -14,37 +14,56 @@ import (
 	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
+// Server represents a HTTP Server with gin router and health probes
+type Server interface {
+	Router() *gin.Engine
+
+	AddHealthz(urls ...string)
+	AddReadyz(status *func() bool, urls ...string)
+
+	Run(ctx context.Context, readyCallbacks ...func())
+	RunSecurely(ctx context.Context, readyCallbacks ...func())
+}
+
+var defaultReadyzFunc = func() bool { return true }
+
 // Server defines a struct for server
-type Server struct {
-	logger        logging.Logger
-	Router        *gin.Engine
-	httpServer    *http.Server
+type server struct {
 	configuration HTTPServerConfiguration
-	readyzFunc    func() bool
+	httpServer    *http.Server
+	logger        logging.Logger
+
+	router *gin.Engine
+
+	readyzFunc func() bool
 }
 
 // NewServer initializes a server
-func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) *Server {
+func NewServer(logger logging.Logger, configuration HTTPServerConfiguration) Server {
 	router := gin.Default()
 
-	s := &Server{
-		logger:        logger,
+	s := &server{
 		configuration: configuration,
+		logger:        logger,
+		router:        router,
+		readyzFunc:    defaultReadyzFunc,
 	}
 
-	router.Use(
+	s.router.Use(
 		s.tracing(),
 		s.setUserID(),
 	)
 
-	s.Router = router
-
 	return s
+}
+
+func (s *server) Router() *gin.Engine {
+	return s.router
 }
 
 // Run when called starts the server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) Run(ctx context.Context, readyCallbacks ...func()) {
+func (s *server) Run(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -61,7 +80,7 @@ func (s *Server) Run(ctx context.Context, readyCallbacks ...func()) {
 
 // RunSecurely when called starts the https server
 // warning: once the Run is called, you cannot modify the Handle in http.Server.
-func (s *Server) RunSecurely(ctx context.Context, readyCallbacks ...func()) {
+func (s *server) RunSecurely(ctx context.Context, readyCallbacks ...func()) {
 	s.httpServerSetup()
 
 	go func() {
@@ -77,31 +96,33 @@ func (s *Server) RunSecurely(ctx context.Context, readyCallbacks ...func()) {
 }
 
 // AddHealthz creates a route to LivenessProbe
-func (s *Server) AddHealthz(urls ...string) {
+func (s *server) AddHealthz(urls ...string) {
 	url := firstStringOfArrayWithFallback(urls, s.configuration.HealthzEndpoint)
 
-	s.Router.GET(url, s.healthz())
+	s.router.GET(url, s.healthz())
 }
 
 // AddReadyz creates a route to ReadinessProbe
-func (s *Server) AddReadyz(status func() bool, urls ...string) {
+func (s *server) AddReadyz(status *func() bool, urls ...string) {
 	// Readyz probe is negative by default
-	s.readyzFunc = status
+	if status != nil {
+		s.readyzFunc = *status
+	}
 
 	url := firstStringOfArrayWithFallback(urls, s.configuration.ReadyzEndpoint)
 
-	s.Router.GET(url, s.readyz())
+	s.router.GET(url, s.readyz())
 }
 
-func (s *Server) httpServerSetup() {
+func (s *server) httpServerSetup() {
 	s.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", s.configuration.Host, s.configuration.Port),
-		Handler: s.Router,
+		Handler: s.router,
 	}
 }
 
 // waitingToBeReady executes a callback when the server is ready.
-func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
+func (s *server) waitingToBeReady(readyCallbacks ...func()) {
 	for {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(s.configuration.Host, strconv.Itoa(s.configuration.Port)), s.configuration.RequestTimeout)
 		if err != nil {
@@ -119,7 +140,7 @@ func (s *Server) waitingToBeReady(readyCallbacks ...func()) {
 	}
 }
 
-func (s *Server) shutdown(ctx context.Context) {
+func (s *server) shutdown(ctx context.Context) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
