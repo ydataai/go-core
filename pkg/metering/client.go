@@ -1,4 +1,5 @@
-package marketplace
+// Package metering provides client and tools to interact with the adapter server
+package metering
 
 import (
 	"context"
