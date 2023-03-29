@@ -52,7 +52,7 @@ func NewMeteringClient(options *ClientOptions) Client {
 
 func (c client) CreateUsageEvent(ctx context.Context, req UsageEvent) (UsageEventResponse, error) {
 	result, err := sendRequest[UsageEvent, UsageEventResponse](ctx, c.pl, c.options.BaseURL, usageEvent, req)
-	return *result, err
+	return result, err
 }
 
 func (c client) CreateUsageEventBatch(
@@ -60,37 +60,38 @@ func (c client) CreateUsageEventBatch(
 ) (UsageEventBatchResponse, error) {
 	result, err := sendRequest[UsageEventBatch, UsageEventBatchResponse](
 		ctx, c.pl, c.options.BaseURL, batchUsageEvent, req)
-	return *result, err
+	return result, err
 }
 
 func sendRequest[T, V any](
 	ctx context.Context, pl coreHTTP.Pipeline, baseURL string, path string, obj T,
-) (*V, error) {
-	endpoint := coreHTTP.JoinPaths(baseURL, "metering", path)
+) (V, error) {
+	result := new(V)
+
+	endpoint := coreHTTP.JoinPaths(baseURL, "/metering", path)
 	request, err := coreHTTP.NewRequest(ctx, http.MethodPost, endpoint)
 	if err != nil {
-		return nil, err
+		return *result, err
 	}
 
 	if err := request.EncodeAsJSON(obj); err != nil {
-		return nil, err
+		return *result, err
 	}
 
 	resp, err := pl.Do(request)
 	if err != nil {
-		return nil, err
+		return *result, err
 	}
 
 	if !resp.HasStatusCode(http.StatusAccepted, http.StatusOK) {
-		return nil, invalidStatusCodeError(resp.Response)
+		return *result, invalidStatusCodeError(resp.Response)
 	}
 
-	result := new(V)
 	if err := resp.DecodeJSON(result); err != nil {
-		return nil, err
+		return *result, err
 	}
 
-	return result, nil
+	return *result, nil
 }
 
 func defaultOptions() ClientOptions {

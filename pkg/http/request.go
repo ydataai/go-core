@@ -73,9 +73,9 @@ func (req *Request) SetBody(body io.ReadSeekCloser, contentType string) error {
 }
 
 // JoinPaths concatenates multiple URL path segments into one path, inserting path separation characters as required.
-func JoinPaths(paths ...string) string {
+func JoinPaths(root string, paths ...string) string {
 	if len(paths) == 0 {
-		return ""
+		return root
 	}
 
 	finalPath := path.Join(paths...)
@@ -85,7 +85,7 @@ func JoinPaths(paths ...string) string {
 		finalPath += "/"
 	}
 
-	return finalPath
+	return root + finalPath
 }
 
 // EncodeAsJSON calls encodes an object as JSON encoding with SetBody.
