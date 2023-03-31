@@ -1,4 +1,4 @@
-package common
+package runtime
 
 import (
 	"github.com/gin-gonic/gin"
