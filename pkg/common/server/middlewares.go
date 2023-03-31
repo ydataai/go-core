@@ -7,20 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s server) tracing() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		requestID := uuid.New().String()
-		if ctx.Request.Header.Get("X-Request-Id") != "" {
-			requestID = ctx.Request.Header.Get("X-Request-Id")
-		}
-
-		s.logger.Infof("Path: %v", ctx.Request.URL.Path)
-		s.logger.Infof("X-Request-Id: %v", requestID)
-		ctx.Set("X-Request-Id", requestID)
-		ctx.Next()
-	}
-}
-
 // NamespaceValidation checks if namespace is in the query params
 func (s server) NamespaceValidation() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -35,6 +21,20 @@ func (s server) NamespaceValidation() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func (s server) tracing() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		requestID := uuid.New().String()
+		if ctx.Request.Header.Get("X-Request-Id") != "" {
+			requestID = ctx.Request.Header.Get("X-Request-Id")
+		}
+
+		s.logger.Infof("Path: %v", ctx.Request.URL.Path)
+		s.logger.Infof("X-Request-Id: %v", requestID)
+		ctx.Set("X-Request-Id", requestID)
+		ctx.Next()
 	}
 }
 
