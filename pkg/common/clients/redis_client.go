@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/ydataai/go-core/pkg/common/logging"
 )
 
