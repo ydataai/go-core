@@ -23,6 +23,9 @@ type Server interface {
 
 	Run(ctx context.Context, readyCallbacks ...func())
 	RunSecurely(ctx context.Context, readyCallbacks ...func())
+
+	// NamespaceValidation checks if namespace is in the query params
+	NamespaceValidation() gin.HandlerFunc
 }
 
 var defaultReadyzFunc = func() bool { return true }
