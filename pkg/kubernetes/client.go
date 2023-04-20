@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
+// Client is an interface that extends "ctrlClient.Client" and adds additional methods for starting and
+// retrieving uncached objects.
 type Client interface {
 	ctrlClient.Client
 
@@ -23,6 +25,7 @@ type Client interface {
 	ListUncached(ctx context.Context, list ctrlClient.ObjectList, opts ...ctrlClient.ListOption) error
 }
 
+// Options are the possible options that can be configured in a kubernetes Client.
 type Options struct {
 	// Scheme is the scheme used to resolve runtime.Objects to GroupVersionKinds / Resources
 	// Defaults to the kubernetes/client-go scheme.Scheme, but it's almost always better
@@ -49,6 +52,8 @@ type client struct {
 	logger    logging.Logger
 }
 
+// NewClient instantiates a new kubernetes client with a logger and provided options
+// This creates a cached client and an uncached reader.
 func NewClient(config *rest.Config, logger logging.Logger, options Options) (Client, error) {
 	// Create the mapper provider
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
