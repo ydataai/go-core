@@ -1,5 +1,5 @@
-// Package k8s is an util library to deal with kubernetes.
-package k8s
+// Package kubernetes is an util library to deal with kubernetes.
+package kubernetes
 
 import (
 	"github.com/kelseyhightower/envconfig"
