@@ -1,4 +1,5 @@
-package k8s
+// Package kubernetes is an util library to deal with kubernetes.
+package kubernetes
 
 import (
 	"fmt"
@@ -8,14 +9,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// SetManualControllerReference sets owner as a Controller OwnerReference on controlled.
-// This is used for garbage collection of the controlled object and for
-// reconciling the owner object on changes to controlled (with a Watch + EnqueueRequestForOwner).
-// Since only one OwnerReference can be a controller, it returns an error if
-// there is another OwnerReference with Controller flag set.
-func SetManualControllerReference(owner, controlled metav1.Object, scheme *runtime.Scheme) func() error {
+func setOwnerReference(
+	owner,
+	obj metav1.Object,
+	scheme *runtime.Scheme,
+) controllerutil.MutateFn {
+	return func() error { return controllerutil.SetControllerReference(owner, obj, scheme) }
+}
+
+func setCrossNamespaceOwnerReference(owner, controlled metav1.Object, scheme *runtime.Scheme) func() error {
 	return func() error {
 		ro, ok := owner.(runtime.Object)
 		if !ok {
@@ -30,8 +35,8 @@ func SetManualControllerReference(owner, controlled metav1.Object, scheme *runti
 			Kind:               gvk.Kind,
 			Name:               owner.GetName(),
 			UID:                owner.GetUID(),
-			BlockOwnerDeletion: pointer.BoolPtr(true),
-			Controller:         pointer.BoolPtr(true),
+			BlockOwnerDeletion: pointer.Bool(true),
+			Controller:         pointer.Bool(true),
 		}
 		owners := controlled.GetOwnerReferences()
 		if idx := indexOwnerRef(owners, ref); idx == -1 {
