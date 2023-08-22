@@ -42,36 +42,6 @@ jobs:
       run: echo "value=`echo ${{ steps.semantic.outputs.new_release_version }} | sed -r 's|v()|\1|'`" >> $GITHUB_OUTPUT
 
 
-  build:
-    if: needs.prepare.outputs.new_release == 'true'
-
-    name: Build
-    runs-on: ubuntu-22.04
-
-    needs: prepare
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version-file: 'go.mod'
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Build for test
-      run: make build
-
-
   releases:
     if: needs.prepare.outputs.new_release == 'true'
 
@@ -80,7 +50,6 @@ jobs:
 
     needs:
     - prepare
-    - build
 
     steps:
     - name: Create Pre Release
