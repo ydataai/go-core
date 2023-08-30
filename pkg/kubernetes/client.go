@@ -47,7 +47,7 @@ type Options struct {
 
 type client struct {
 	ctrlClient.Client
-	cache     cache.Cache
+	cluster   cluster.Cluster
 	apiReader ctrlClient.Reader
 	logger    logging.Logger
 }
@@ -55,22 +55,14 @@ type client struct {
 // NewClient instantiates a new kubernetes client with a logger and provided options
 // This creates a cached client and an uncached reader.
 func NewClient(config *rest.Config, logger logging.Logger, options Options) (Client, error) {
+	httpClient, err := rest.HTTPClientFor(config)
+	if err != nil {
+		logger.Error(err, "Failed to create HTTP Client for config", config)
+	}
 	// Create the mapper provider
-	mapper, err := apiutil.NewDynamicRESTMapper(config)
+	mapper, err := apiutil.NewDynamicRESTMapper(config, httpClient)
 	if err != nil {
 		logger.Error(err, "Failed to get API Group-Resources")
-		return nil, err
-	}
-
-	// Create the cache for the cached read client and registering informers
-	cacheOptions := cache.Options{
-		Scheme: options.Scheme,
-		Mapper: mapper,
-		Resync: options.SyncPeriod,
-	}
-
-	cache, err := cache.New(config, cacheOptions)
-	if err != nil {
 		return nil, err
 	}
 
@@ -81,16 +73,32 @@ func NewClient(config *rest.Config, logger logging.Logger, options Options) (Cli
 		return nil, err
 	}
 
-	clusterClient, err := cluster.DefaultNewClient(cache, config, clientOptions, options.DisableCacheFor...)
+	cluster, err := cluster.New(config, func(o *cluster.Options) {
+		o.Cache = cache.Options{
+			Scheme:     options.Scheme,
+			Mapper:     mapper,
+			SyncPeriod: options.SyncPeriod,
+		}
+		o.Client = ctrlClient.Options{
+			HTTPClient: httpClient,
+			Scheme:     options.Scheme,
+			Mapper:     mapper,
+			Cache: &ctrlClient.CacheOptions{
+				DisableFor: options.DisableCacheFor,
+			},
+		}
+		o.HTTPClient = httpClient
+		o.SyncPeriod = options.SyncPeriod
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return client{clusterClient, cache, apiReader, logger}, nil
+	return client{cluster.GetClient(), cluster, apiReader, logger}, nil
 }
 
 func (c client) Start(ctx context.Context) error {
-	return c.cache.Start(ctx)
+	return c.cluster.Start(ctx)
 }
 
 func (c client) GetUncached(
