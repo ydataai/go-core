@@ -12,7 +12,7 @@ require (
 	github.com/redis/go-redis/v9 v9.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	google.golang.org/grpc v1.58.0
+	google.golang.org/grpc v1.58.1
 	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
