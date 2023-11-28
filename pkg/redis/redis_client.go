@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -54,7 +54,7 @@ func NewRedisClient(config RedisConfiguration, logger logging.Logger) RedisClien
 func newRedisClusterClient(config RedisConfiguration, logger logging.Logger) RedisClient {
 	// CA and Cert configuration for TLS connection
 	certPool := x509.NewCertPool()
-	caCert, err := ioutil.ReadFile(config.CACert)
+	caCert, err := os.ReadFile(config.CACert)
 	if err != nil {
 		logger.Fatalf("Error to read CA Cert file from: %s. Err: %v", config.CACert, err)
 	}
