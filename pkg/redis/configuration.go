@@ -1,4 +1,4 @@
-package clients
+package redis
 
 import "github.com/kelseyhightower/envconfig"
 
