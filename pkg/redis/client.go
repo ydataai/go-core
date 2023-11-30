@@ -14,6 +14,7 @@ import (
 type RedisClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
 	Ping(ctx context.Context) *redis.StatusCmd
@@ -101,6 +102,10 @@ func (c redisClientImpl) Get(ctx context.Context, key string) *redis.StringCmd {
 
 func (c redisClientImpl) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd {
 	return c.get().Set(ctx, key, value, expiration)
+}
+
+func (c redisClientImpl) Del(ctx context.Context, keys ...string) *redis.IntCmd {
+	return c.get().Del(ctx, keys...)
 }
 
 func (c redisClientImpl) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
