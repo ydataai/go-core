@@ -15,6 +15,11 @@ type RedisClient interface {
 	Get(ctx context.Context, key string) *redis.StringCmd
 	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) *redis.StatusCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
+
+	JSONGet(ctx context.Context, key string, paths ...string) *redis.JSONCmd
+	JSONSet(ctx context.Context, key, path string, value interface{}) *redis.StatusCmd
+	JSONDel(ctx context.Context, key string, path string) *redis.IntCmd
+
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
 	Ping(ctx context.Context) *redis.StatusCmd
@@ -106,6 +111,18 @@ func (c redisClientImpl) Set(ctx context.Context, key string, value interface{},
 
 func (c redisClientImpl) Del(ctx context.Context, keys ...string) *redis.IntCmd {
 	return c.get().Del(ctx, keys...)
+}
+
+func (c redisClientImpl) JSONGet(ctx context.Context, key string, paths ...string) *redis.JSONCmd {
+	return c.get().JSONGet(ctx, key, paths...)
+}
+
+func (c redisClientImpl) JSONSet(ctx context.Context, key string, path string, value interface{}) *redis.StatusCmd {
+	return c.get().JSONSet(ctx, key, path, value)
+}
+
+func (c redisClientImpl) JSONDel(ctx context.Context, key string, path string) *redis.IntCmd {
+	return c.get().JSONDel(ctx, key, path)
 }
 
 func (c redisClientImpl) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
