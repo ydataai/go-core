@@ -20,6 +20,9 @@ type RedisClient interface {
 	JSONSet(ctx context.Context, key, path string, value interface{}) *redis.StatusCmd
 	JSONDel(ctx context.Context, key string, path string) *redis.IntCmd
 
+	HSet(ctx context.Context, key string, values ...interface{}) *redis.IntCmd
+	HGet(ctx context.Context, key, field string) *redis.StringCmd
+
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
 	Ping(ctx context.Context) *redis.StatusCmd
@@ -123,6 +126,14 @@ func (c redisClientImpl) JSONSet(ctx context.Context, key string, path string, v
 
 func (c redisClientImpl) JSONDel(ctx context.Context, key string, path string) *redis.IntCmd {
 	return c.get().JSONDel(ctx, key, path)
+}
+
+func (c redisClientImpl) HSet(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+	return c.get().HSet(ctx, key, values)
+}
+
+func (c redisClientImpl) HGet(ctx context.Context, key, field string) *redis.StringCmd {
+	return c.get().HGet(ctx, key, field)
 }
 
 func (c redisClientImpl) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
