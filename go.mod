@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/common v0.49.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	google.golang.org/grpc v1.62.0
 	k8s.io/api v0.28.4
 	k8s.io/apimachinery v0.28.4
