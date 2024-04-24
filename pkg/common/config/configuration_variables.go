@@ -8,13 +8,12 @@ package config
 //		Var2 string        `envconfig:"VAR2"`
 //	}
 //
-// func (swv *StructWithVars) LoadFromEnvVars() error {
-//   if err := envconfig.Process("", swv); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-//
+//	func (swv *StructWithVars) LoadFromEnvVars() error {
+//	  if err := envconfig.Process("", swv); err != nil {
+//			return err
+//		}
+//		return nil
+//	}
 type ConfigurationVariables interface {
 	LoadFromEnvVars() error
 }

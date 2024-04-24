@@ -40,10 +40,11 @@ func createClientAPI(config PrometheusConfiguration, logger logging.Logger) v1.A
 }
 
 // QueryRange returns range vectors as result type matrix, given the following parameters:
-//    - query: Prometheus query
-//    - startAt: start time
-//    - endAt: end time
-//    - step: interval duration
+//   - query: Prometheus query
+//   - startAt: start time
+//   - endAt: end time
+//   - step: interval duration
+//
 // It returns the result matrix and the execution error encountered.
 func (c PrometheusClient) QueryRange(ctx context.Context, query string, startAt, endAt time.Time, step time.Duration) (model.Value, error) {
 	result, warnings, err := c.api.QueryRange(ctx, query, v1.Range{
@@ -62,8 +63,9 @@ func (c PrometheusClient) QueryRange(ctx context.Context, query string, startAt,
 }
 
 // Query returns an instant vector, given the following parameters:
-//    - query: Prometheus query
-//    - moment: moment in time
+//   - query: Prometheus query
+//   - moment: moment in time
+//
 // It returns the result vector and the execution error encountered.
 func (c PrometheusClient) Query(ctx context.Context, query string, moment time.Time) (model.Value, error) {
 	result, warnings, err := c.api.Query(ctx, query, moment)

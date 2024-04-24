@@ -10,7 +10,7 @@ type Namespace string
 type UserID string
 
 // Credentials store the credentials from vault
-type Credentials map[string]string
+type Credentials map[string]interface{}
 
 // ResourceKind defines a resource kind type
 type ResourceKind string
