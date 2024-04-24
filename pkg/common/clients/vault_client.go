@@ -50,7 +50,7 @@ func NewVaultClient(logger logging.Logger, configuration VaultClientConfiguratio
 
 // StoreCredentials receives the path and the respective map of credentials and attempts to store them
 // on the Vault server.
-func (vc *VaultClient) StoreCredentials(path string, credentials map[string]string) error {
+func (vc *VaultClient) StoreCredentials(path string, credentials config.Credentials) error {
 	vc.logger.Info("Sending credentials to Vault ☄️")
 
 	_, err := vc.client.Logical().Write(path, map[string]interface{}{
@@ -81,20 +81,22 @@ func (vc *VaultClient) GetCredentials(path string) (*config.Credentials, error) 
 
 	vc.logger.Info("Credentials safely retrieved from Vault 🔑")
 
-	secretsMap, ok := secret.Data["data"].(map[string]interface{})
+	secretsMap, ok := secret.Data["data"].(config.Credentials)
 	if !ok {
 		vc.logger.Errorf("Unable to decipher received credentials from Vault 😱. Err: %v", err)
 		return nil, err
 	}
 
-	vc.logger.Info("Processing credentials map 🔎")
-	credentials := config.Credentials{}
+	return &secretsMap, nil
 
-	for key, value := range secretsMap {
-		credentials[fmt.Sprintf("%v", key)] = fmt.Sprintf("%v", value)
-	}
+	// vc.logger.Info("Processing credentials map 🔎")
+	// credentials := config.Credentials{}
 
-	return &credentials, nil
+	// for key, value := range secretsMap {
+	// 	credentials[fmt.Sprintf("%v", key)] = fmt.Sprintf("%v", value)
+	// }
+
+	// return &credentials, nil
 }
 
 // DeleteCredentials receives the path and attempts to delete the existing credentials on Vault.
