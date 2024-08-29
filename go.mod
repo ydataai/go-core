@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/vault/api v1.14.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.20.2
-	github.com/prometheus/common v0.56.0
+	github.com/prometheus/common v0.57.0
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
