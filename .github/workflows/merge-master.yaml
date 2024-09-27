@@ -12,7 +12,7 @@ on:
 jobs:
   prepare:
     name: Calculate Version and build number
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     outputs:
       build_number: ${{ steps.short_sha.outputs.value }}
@@ -46,7 +46,7 @@ jobs:
     if: needs.prepare.outputs.new_release == 'true'
 
     name: Dev and Draft Releases
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     needs:
     - prepare
