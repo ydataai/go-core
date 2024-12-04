@@ -2,7 +2,7 @@ module github.com/ydataai/go-core
 
 go 1.22.0
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/gin-gonic/gin v1.10.0
