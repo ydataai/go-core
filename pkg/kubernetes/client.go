@@ -88,7 +88,6 @@ func NewClient(config *rest.Config, logger logging.Logger, options Options) (Cli
 			},
 		}
 		o.HTTPClient = httpClient
-		o.SyncPeriod = options.SyncPeriod
 	})
 	if err != nil {
 		return nil, err
