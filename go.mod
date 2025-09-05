@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/vault/api v1.20.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/prometheus/client_golang v1.23.0
+	github.com/prometheus/client_golang v1.23.1
 	github.com/prometheus/common v0.66.0
 	github.com/redis/go-redis/v9 v9.9.0
 	github.com/sirupsen/logrus v1.9.3
